@@ -49,10 +49,11 @@ cchadat <- bind_rows(yr1, yr2) %>%
     ), 
     pcent_basal_cover = case_when(
       pcent_basal_cover > 100 ~ NA_real_, 
-      pcent_basal_cover < 0 ~ NA_real, 
+      pcent_basal_cover < 0 ~ NA_real_, 
       T ~ pcent_basal_cover
     )
-  )
+  ) %>% 
+  arrange(site, sample, meter)
 
 save(cchadat, file = here('data/cchadat.RData'))
 
