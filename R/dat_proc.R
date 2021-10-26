@@ -3,7 +3,8 @@
 box::use(
   dplyr[...], 
   tidyr[...],
-  here[...], 
+  here[...],
+  lubridate[...],
   googlesheets4[read_sheet,gs4_deauth],
   googledrive[drive_deauth]
 )
@@ -16,20 +17,19 @@ drive_deauth()
 # data here https://drive.google.com/drive/u/0/folders/1ZbpbBfIxb5-BnXhYjymVNMzB88DqZeAO
 id <- '1x_ytLD6ro--QzcCClnDvFC04m7PmbVbtReVQkNktyd4'
 
-yr1 <- read_sheet(id, sheet = 'Yr1-transect') %>% 
-  mutate(sample = 'one')
-yr2 <- read_sheet(id, sheet = 'Yr2-transect') %>% 
-  mutate(sample = 'two') %>% 
-  rename(meter = Meter)
+# do not use individual year sheets because the zone names are not corrected
+ccharaw <- read_sheet(id, sheet = 'AllVeg', col_types = 'cdcccdcd')
 
 # combine, minor data edits
-cchadat <- bind_rows(yr1, yr2) %>% 
+cchadat <- ccharaw %>% 
   rename(
     species = Vegetation_species, 
+    sample = `Sample Set`
   ) %>% 
   rename_all(tolower) %>% 
   mutate(
-    date = as.Date(date), 
+    date = gsub('\\s\\(Part\\s2\\)$', '', date),
+    date = mdy(date), 
     species = case_when(
       species == 'Acrostichum danaeifolium' ~ 'Acrostichum danaefolium', 
       species == 'Baccahris sp.' ~ 'Baccharis sp.', 
@@ -43,8 +43,12 @@ cchadat <- bind_rows(yr1, yr2) %>%
       T ~ species
     ), 
     zone_name = case_when(
+      zone_name == 'Coastal upland' ~ 'Coastal Upland',
+      zone_name == 'Juncus marsh' ~ 'Juncus Marsh', 
+      zone_name == 'Schinus terebinthifolia' ~ 'Schinus terebinthifolius', 
       zone_name == 'Salt barren' ~ 'Salt Barren',
       zone_name == 'Schinus terebinthifolia' ~ 'Schinus terebinthifolius',
+      zone_name == 'Transitional marsh' ~ 'Transitional Marsh',
       T ~ zone_name
     ), 
     pcent_basal_cover = case_when(
@@ -53,6 +57,7 @@ cchadat <- bind_rows(yr1, yr2) %>%
       T ~ pcent_basal_cover
     )
   ) %>% 
+  filter(!is.na(site)) %>% 
   arrange(site, sample, meter)
 
 save(cchadat, file = here('data/cchadat.RData'))
