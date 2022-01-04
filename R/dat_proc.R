@@ -18,15 +18,17 @@ drive_deauth()
 id <- '1x_ytLD6ro--QzcCClnDvFC04m7PmbVbtReVQkNktyd4'
 
 # do not use individual year sheets because the zone names are not corrected
-ccharaw <- read_sheet(id, sheet = 'AllVeg', col_types = 'cdcccdcd')
+ccharaw <- read_sheet(id, sheet = 'AllVeg', col_types = 'cdcccdccd')
 
 # combine, minor data edits
 cchadat <- ccharaw %>% 
   rename(
     species = Vegetation_species, 
-    sample = `Sample Set`
+    sample = `Sample_Set`
   ) %>% 
   rename_all(tolower) %>% 
+  rename(pcent_basal_cover = percent_basal_cover) %>% 
+  select(-tree_class) %>% 
   mutate(
     date = gsub('\\s\\(Part\\s2\\)$', '', date),
     date = mdy(date), 
