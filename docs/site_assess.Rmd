@@ -15,8 +15,12 @@ box::use(
   ggplot2[...], 
   tidyr[...],
   dplyr[...], 
-  ggridges[...]
+  ggridges[...],
+  lubridate[ymd], 
+  forcats[fct_reorder2]
 )
+
+source(here('R/funcs.R'))
 
 load(file = here('data/cchadat.RData'))
 
@@ -24,158 +28,50 @@ thm <- theme_minimal(base_size = 14) +
   theme(
     panel.grid.minor = element_blank() 
   )
+
+site <- 'Big Bend - TECO'
+sp <- 'Avicennia germinans'
 ```
 
 Plot showing number of times a zone was identified across transects, dates.
 
 ```{r, fig.height = 5, fig.width = 7}
-toplo <- cchadat %>%
-  select(site, sample, zone_name) %>% 
-  unique %>% 
-  filter(!is.na(zone_name)) %>% 
-  group_by(zone_name) %>% 
-  summarize(
-    cnt = n(), 
-    .groups = 'drop'
-  ) %>% 
-  arrange(cnt) %>% 
-  mutate(
-    zone_name = factor(zone_name, levels = zone_name)
-  )
-
-ggplot(toplo, aes(y = zone_name, x = cnt)) + 
-  geom_bar(stat = 'identity', alpha = 0.7) + 
-  thm +
-  theme(
-    axis.text.y = element_text(size = 8)
-  ) +
-  scale_x_continuous(expand = c(0, 0), breaks = seq(0, max(toplo$cnt))) +
-  labs(
-    y = NULL, 
-    x = 'Unique counts across sites, dates'
-  )
+zonecnt_plo(cchadat, thm)
 ```
 
-Plot showing total distance zone was recorded aross transect, dates.
+Plot showing total distance zone was recorded across transect, dates.
 
 ```{r, fig.height = 5, fig.width = 7}
-toplo <- cchadat %>%
-  select(site, sample, zone_name, meter) %>% 
-  unique %>% 
-  filter(!is.na(zone_name)) %>% 
-  group_by(site, sample, zone_name) %>% 
-  summarize(
-    dist = max(meter) - min(meter),
-    .groups = 'drop'
-  ) %>% 
-  group_by(zone_name) %>% 
-  summarise(
-    dist = sum(dist, na.rm = T)
-  ) %>% 
-  arrange(dist) %>% 
-  mutate(
-    zone_name = factor(zone_name, levels = zone_name)
-  )
-  
-ggplot(toplo, aes(y = zone_name, x = dist)) + 
-  geom_bar(stat = 'identity', alpha = 0.7) + 
-  thm +
-  theme(
-    axis.text.y = element_text(size = 8)
-  ) +
-  scale_x_continuous(expand = c(0, 0)) +
-  labs(
-    y = NULL, 
-    x = 'Total distance recorded, all dates'
-  )
+zonedst_plo(cchadat, thm)
 ```
 
 An example showing zones for two sample dates at one site. 
 
 ```{r, fig.height = 3, fig.width = 12}
-site <- 'Big Bend - TECO'
-toplo <- cchadat %>% 
-  filter(site == !!site) %>% 
-  select(zone_name, zone, sample, meter, date) %>% 
-  unique %>% 
-  unite('sample', sample, date, sep = ': ') %>% 
-  mutate(
-    sample = factor(sample, levels = rev(unique(sample)))
-  ) %>% 
-  group_by(sample, zone_name)
+sitedst_plo1(cchadat, site = site, thm)
+```
 
-levs <- toplo %>% 
-  filter(grepl('^1', sample)) %>%
-  select(zone_name, zone) %>% 
-  unique %>% 
-  filter(!duplicated(zone)) %>% 
-  pull(zone_name)
+To evaluate simple changes in zones over time, an estimate of total distance per zone between time points could be evaluated.  This is also very similar to the previous plot.
 
-toplo <- toplo %>% 
-  mutate(
-    zone_name = factor(zone_name, levels = levs)
-  )
-
-ggplot(toplo, aes(x = meter, y = sample)) + 
-  geom_line(aes(color = zone_name), stat = 'identity', lwd = 20, alpha = 0.7) + 
-  scale_x_continuous(breaks = seq(0, max(toplo$meter), by = 10)) +
-  guides(color = guide_legend(override.aes = list(lwd = 7))) +
-  thm +
-  theme(
-    panel.grid.major.y = element_blank()
-  ) +
-  labs(
-    x = 'Meters', 
-    y = NULL, 
-    subtitle = paste0('Site: ', site),
-    color = 'Zone name'
-  )
+```{r, fig.height = 4, fig.width = 12}
+sitedst_plo2(cchadat, site, thm)
 ```
 
 The same site, but showing species data along the transect.
 
 ```{r fig.height = 8, fig.width = 12}
-site <- 'Big Bend - TECO'
-
-tofilt <- c('Unknown', 'Open Water', 'none/detritus', 'Woody Debris')
-
-toplo <- cchadat %>% 
-  filter(site == !!site) %>% 
-  filter(!species %in% tofilt) %>% 
-  mutate(
-    zone_name = factor(zone_name, levels = levs)
-  ) %>% 
-  unite('sample', sample, date, sep = ': ')
-
-ggplot(toplo, aes(x = meter, y = species, height = pcent_basal_cover / 100, fill = zone_name, color = zone_name)) + 
-  geom_ridgeline(stat = 'identity') + 
-  scale_x_continuous(expand = c(0, 0), breaks = seq(0, max(toplo$meter), by = 20)) + 
-  thm + 
-  # theme(panel.grid.major.y = element_blank()) + 
-  labs(
-    x = 'Meters', 
-    color = 'Zone name', 
-    fill = 'Zone name', 
-    y = 'Species relative basal cover', 
-    subtitle = paste0('Site: ', site)
-  ) + 
-  facet_wrap(~sample, ncol = 2)
+sitedst_plo3(cchadat, site, thm)
 ```
 
-To evaluate simple changes in zones over time, an estimate of total distance per zone between time points could be evaluated.
+An evaluation of a single species across all sites, can be shown as frequency occurrence across the transect or mean percent basal cover. This example shows frequency occurrence of *Avicennia germinans*. 
 
-```{r}
-site <- 'Big Bend - TECO'
+```{r, fig.height = 4, fig.width = 12}
+sppsum_plo(cchadat, sp, typ = 'fo', thm)
+```
 
-toplo <- cchadat %>% 
-  filter(site == !!site) %>% 
-  select(zone_name, zone, sample, meter, date) %>% 
-  unique %>% 
-  unite('sample', sample, date, sep = ': ') %>% 
-  group_by(zone_name, zone, sample) %>% 
-  summarize(
-    dist = max(meter) - min(meter), 
-    .groups = 'drop'
-  )
+And now average percent basal cover. 
+
+```{r, fig.height = 4, fig.width = 12}
+sppsum_plo(cchadat, sp, typ = 'cover', thm)
 ```
 
