@@ -275,7 +275,7 @@ sitezonesum_tab <- function(cchadat, site, zone = NULL, typ = c('fo', 'cover')){
     ), 
     defaultColDef = colDef(format = colFormat(digits = 1, percent = T)), 
     resizable = T, 
-    defaultExpanded = T
+    defaultExpanded = F
     )
   
   return(tab)
@@ -346,16 +346,19 @@ sitesum_plo <- function(cchadat, site, delim, top, zone_name = NULL){
   cols <- RColorBrewer::brewer.pal(12, 'Paired') %>% 
     colorRampPalette(.)
 
+  top <- min(c(top, length(unique(toplo$species))))
+  leglab <- paste('Top', top, 'species')
+  
   p <- ggplot(toplo, aes(x = meter_grp, y = yval, fill = species)) + 
     geom_bar(stat = 'identity', color = 'black') + 
-    scale_x_discrete(labels = levels(toplo$meter_grp), breaks = levels(toplo$meter_grp)) +
+    scale_x_discrete(drop = F) +
     scale_fill_manual(values = cols(top)) +
     facet_wrap(~sample, ncol = 1, drop = F) + 
     thm + 
     labs(
       y = 'Sum of basal % cover', 
       x = 'Meter distance', 
-      fill = paste('Top', top, 'species')
+      fill = leglab
     )
   
   return(p)

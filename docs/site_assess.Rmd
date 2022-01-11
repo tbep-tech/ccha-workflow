@@ -84,9 +84,7 @@ A table of species frequency occurrence by zone, over time:
 sitezonesum_tab(cchadat, site = site)
 ```
 
-Same thing by as percent basal cover.
-
-A table of species frequency occurrence by zone, over time: 
+Same thing but as percent basal cover.
 
 ```{r}
 sitezonesum_tab(cchadat, site = site, typ = 'cover')
