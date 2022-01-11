@@ -92,3 +92,15 @@ A table of species frequency occurrence by zone, over time:
 sitezonesum_tab(cchadat, site = site, typ = 'cover')
 ```
 
+A plot of sum of percent basal cover by arbitrary meter markings, top species, and across zones.
+
+```{r, height = 8, width = 8}
+sitesum_plo(cchadat, site, delim = 10, top = 8)
+```
+
+A plot of sum of percent basal cover by arbitrary meter markings, top species, and for a select zone.
+
+```{r, height = 8, width = 8}
+sitesum_plo(cchadat, site, delim = 10, top = 8, zone_name = 'Mangrove Fringe')
+```
+

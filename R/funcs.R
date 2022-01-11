@@ -186,7 +186,7 @@ sitezonedst_plo3 <- function(cchadat, site, thm){
 }
 
 #' summarize species at a site, zone optional, used for tabular or graphical summary
-sitezonesum_fun <- function(cchacat, site, zone_name = NULL, typ = c('fo', 'cover')){
+sitezonesum_fun <- function(cchadat, site, zone_name = NULL, typ = c('fo', 'cover')){
   
   typ <- match.arg(typ)
  
@@ -247,7 +247,7 @@ sitezonesum_fun <- function(cchacat, site, zone_name = NULL, typ = c('fo', 'cove
 }
 
 # tabular output from sitezonesum_fun
-sitezonesum_tab <- function(cchacat, site, zone = NULL, typ = c('fo', 'cover')){
+sitezonesum_tab <- function(cchadat, site, zone = NULL, typ = c('fo', 'cover')){
 
   typ <- match.arg(typ)
   
@@ -279,6 +279,86 @@ sitezonesum_tab <- function(cchacat, site, zone = NULL, typ = c('fo', 'cover')){
     )
   
   return(tab)
+  
+}
+
+
+#' summarize species at a site, across zones, used for tabular or graphical summary
+sitesum_fun <- function(cchadat, site, delim, top, zone_name = NULL){
+  
+  dat <- cchadat %>% 
+    filter(site %in% !!site) %>% 
+    select(site, sample, meter, zone, zone_name, species, pcent_basal_cover) %>%
+    tidyr::complete(species, tidyr::nesting(site, sample, zone, zone_name, meter), fill = list(pcent_basal_cover = 0))
+  
+  delims <- unique(dat$meter) %>% 
+    as.numeric %>% 
+    range %>% 
+    {seq(.[1], .[2], length.out = delim + 1)}
+  
+  lbs <- round(delims, 0)[-length(delims)]
+  
+  # make sure zone inputs are found at site
+  if(!is.null(zone_name)){
+    
+    zns <- unique(dat$zone_name)
+    chk <- zone_name[!zone_name %in% zns] %>% 
+      paste(collapse = ', ')
+    
+    if(nchar(chk) != 0)
+      stop(chk, ' zones not in ' , site, ', must be one of ', paste(zns, collapse = ', '))
+    
+    dat <- dat %>% 
+      filter(zone_name %in% !!zone_name) 
+    
+  }
+
+  sums <- dat %>% 
+    mutate(
+      meter_grp = cut(meter, breaks = delims, labels = lbs, include.lowest = T, right = F)
+    ) %>% 
+    group_by(sample, species, meter_grp) %>% 
+    summarize(yval = sum(pcent_basal_cover), .groups = 'drop') %>% 
+    filter(yval > 0)
+  
+  maxout <- sums %>% 
+    group_by(species) %>% 
+    summarise(yval = sum(yval)) %>% 
+    arrange(-yval) %>% 
+    pull(species) %>% 
+    .[1:top]
+  
+  out <- sums %>% 
+    filter(species %in% maxout)
+  
+  return(out)
+
+}
+
+# plot results for sitesum_fun
+sitesum_plo <- function(cchadat, site, delim, top, zone_name = NULL){
+  
+  toplo <- sitesum_fun(cchadat, site, delim, top, zone_name) %>% 
+    mutate(
+      sample = paste0('Phase ', sample)
+    )
+  
+  cols <- RColorBrewer::brewer.pal(12, 'Paired') %>% 
+    colorRampPalette(.)
+
+  p <- ggplot(toplo, aes(x = meter_grp, y = yval, fill = species)) + 
+    geom_bar(stat = 'identity', color = 'black') + 
+    scale_x_discrete(labels = levels(toplo$meter_grp), breaks = levels(toplo$meter_grp)) +
+    scale_fill_manual(values = cols(top)) +
+    facet_wrap(~sample, ncol = 1, drop = F) + 
+    thm + 
+    labs(
+      y = 'Sum of basal % cover', 
+      x = 'Meter distance', 
+      fill = paste('Top', top, 'species')
+    )
+  
+  return(p)
   
 }
 
