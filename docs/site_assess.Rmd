@@ -17,7 +17,8 @@ box::use(
   dplyr[...], 
   ggridges[...],
   lubridate[ymd], 
-  forcats[fct_reorder2]
+  forcats[fct_reorder2], 
+  reactable[...]
 )
 
 source(here('R/funcs.R'))
@@ -29,8 +30,10 @@ thm <- theme_minimal(base_size = 14) +
     panel.grid.minor = element_blank() 
   )
 
+# test args
 site <- 'Big Bend - TECO'
 sp <- 'Avicennia germinans'
+zones <- c("Brazilian Pepper Berm", "Coastal Upland", "Immature Mangrove Fringe", "Mangrove Fringe", "Salt Barren", "Salt Marsh", "Transitional Wetland")
 ```
 
 Plot showing number of times a zone was identified across transects, dates.
@@ -48,19 +51,19 @@ zonedst_plo(cchadat, thm)
 An example showing zones for two sample dates at one site. 
 
 ```{r, fig.height = 3, fig.width = 12}
-sitedst_plo1(cchadat, site = site, thm)
+sitezonedst_plo1(cchadat, site = site, thm)
 ```
 
 To evaluate simple changes in zones over time, an estimate of total distance per zone between time points could be evaluated.  This is also very similar to the previous plot.
 
 ```{r, fig.height = 4, fig.width = 12}
-sitedst_plo2(cchadat, site, thm)
+sitezonedst_plo2(cchadat, site, thm)
 ```
 
 The same site, but showing species data along the transect.
 
 ```{r fig.height = 8, fig.width = 12}
-sitedst_plo3(cchadat, site, thm)
+sitezonedst_plo3(cchadat, site, thm)
 ```
 
 An evaluation of a single species across all sites, can be shown as frequency occurrence across the transect or mean percent basal cover. This example shows frequency occurrence of *Avicennia germinans*. 
@@ -73,5 +76,19 @@ And now average percent basal cover.
 
 ```{r, fig.height = 4, fig.width = 12}
 sppsum_plo(cchadat, sp, typ = 'cover', thm)
+```
+
+A table of species frequency occurrence by zone, over time: 
+
+```{r}
+sitezonesum_tab(cchadat, site = site)
+```
+
+Same thing by as percent basal cover.
+
+A table of species frequency occurrence by zone, over time: 
+
+```{r}
+sitezonesum_tab(cchadat, site = site, typ = 'cover')
 ```
 

@@ -69,7 +69,7 @@ zonedst_plo <- function(cchadat, thm){
 }
 
 #' site zone distance by date, continuous
-sitedst_plo1 <- function(cchadat, site, thm){
+sitezonedst_plo1 <- function(cchadat, site, thm){
 
   toplo <- cchadat %>% 
     filter(site == !!site) %>% 
@@ -113,7 +113,7 @@ sitedst_plo1 <- function(cchadat, site, thm){
 }
 
 #' site zone distance by date, by zone
-sitedst_plo2 <- function(cchadat, site, thm){
+sitezonedst_plo2 <- function(cchadat, site, thm){
   
   toplo <- cchadat %>% 
     filter(site == !!site) %>% 
@@ -146,7 +146,7 @@ sitedst_plo2 <- function(cchadat, site, thm){
 }
 
 #' site zone distance by date, species
-sitedst_plo3 <- function(cchadat, site, thm){
+sitezonedst_plo3 <- function(cchadat, site, thm){
   
   tofilt <- c('Unknown', 'Open Water', 'none/detritus', 'Woody Debris')
 
@@ -183,6 +183,103 @@ sitedst_plo3 <- function(cchadat, site, thm){
   
   return(p)
 
+}
+
+#' summarize species at a site, zone optional, used for tabular or graphical summary
+sitezonesum_fun <- function(cchacat, site, zone_name = NULL, typ = c('fo', 'cover')){
+  
+  typ <- match.arg(typ)
+ 
+  dat <- cchadat %>% 
+    filter(site %in% !!site) 
+  
+  # make sure zone inputs are found at site
+  if(!is.null(zone_name)){
+    
+    zns <- unique(dat$zone_name)
+    chk <- zone_name[!zone_name %in% zns] %>% 
+      paste(collapse = ', ')
+    
+    if(nchar(chk) != 0)
+      stop(chk, ' zones not in ' , site, ', must be one of ', paste(zns, collapse = ', '))
+    
+    dat <- dat %>% 
+      filter(zone_name %in% !!zone_name) 
+    
+  }
+  
+  # get complete data by filling species as zero
+  dat <- dat %>% 
+    select(site, sample, meter, zone, zone_name, species, pcent_basal_cover) %>%
+    tidyr::complete(species, tidyr::nesting(site, sample, zone, zone_name, meter), fill = list(pcent_basal_cover = 0))
+  
+  # freq occ estimates
+  if(typ == 'fo')
+
+    out <- dat %>%
+      mutate(
+        pa = ifelse(pcent_basal_cover > 0, 1, 0)
+      ) %>%
+      select(-pcent_basal_cover) %>%
+      unique %>%
+      group_by(site, sample, zone, zone_name, species) %>%
+      summarise(
+        yval = sum(pa) / n(),
+        .groups = 'drop'
+      )
+
+  # % basal cover estimates    
+  if(typ == 'cover')
+    
+    out <- dat %>% 
+      unique %>% 
+      group_by(site, sample, zone, zone_name, species) %>% 
+      summarise(
+        yval = mean(pcent_basal_cover) / 100, 
+        .groups = 'drop'
+      )
+  
+  out <- out %>% 
+    filter(yval > 0)
+     
+  return(out)
+  
+}
+
+# tabular output from sitezonesum_fun
+sitezonesum_tab <- function(cchacat, site, zone = NULL, typ = c('fo', 'cover')){
+
+  typ <- match.arg(typ)
+  
+  totab <- sitezonesum_fun(cchadat, site, zone, typ)
+  
+  ylab <- 'Mean basal % cover'
+  if(typ == 'fo')
+    ylab <- '% Frequency Occurrence'
+
+  totab <- totab %>% 
+    mutate(
+      sample = paste('Phase', sample)
+    ) %>% 
+    pivot_wider(names_from = 'sample', values_from = 'yval', values_fill = NA) %>%
+    arrange(zone, species) %>% 
+    unite('zone_name', zone, zone_name, sep = ': ')
+  
+  tab <- reactable(
+    totab,
+    groupBy = c('zone_name'),
+    columns = list(
+      site = colDef(show = F),
+      zone_name = colDef(name = 'Zone', minWidth = 200),
+      species = colDef(name = 'Species', minWidth = 200)
+    ), 
+    defaultColDef = colDef(format = colFormat(digits = 1, percent = T)), 
+    resizable = T, 
+    defaultExpanded = T
+    )
+  
+  return(tab)
+  
 }
 
 #' single species summary across sites, zones
