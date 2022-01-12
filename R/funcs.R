@@ -289,8 +289,9 @@ sitesum_fun <- function(cchadat, site, delim, top, zone_name = NULL){
   dat <- cchadat %>% 
     filter(site %in% !!site) %>% 
     select(site, sample, meter, zone, zone_name, species, pcent_basal_cover) %>%
-    tidyr::complete(species, tidyr::nesting(site, sample, zone, zone_name, meter), fill = list(pcent_basal_cover = 0))
-  
+    tidyr::complete(species, tidyr::nesting(site, sample, zone, zone_name, meter), fill = list(pcent_basal_cover = 0)) %>% 
+    mutate(species = factor(species))
+
   delims <- unique(dat$meter) %>% 
     as.numeric %>% 
     range %>% 
@@ -343,16 +344,18 @@ sitesum_plo <- function(cchadat, site, delim, top, zone_name = NULL){
       sample = paste0('Phase ', sample)
     )
   
-  cols <- RColorBrewer::brewer.pal(12, 'Paired') %>% 
+  cols <- RColorBrewer::brewer.pal(9, 'Set1') %>% 
     colorRampPalette(.)
 
   top <- min(c(top, length(unique(toplo$species))))
   leglab <- paste('Top', top, 'species')
   
+  nlev <- length(levels(toplo$species))
+  
   p <- ggplot(toplo, aes(x = meter_grp, y = yval, fill = species)) + 
     geom_bar(stat = 'identity', color = 'black') + 
     scale_x_discrete(drop = F) +
-    scale_fill_manual(values = cols(top)) +
+    scale_fill_manual(values = cols(nlev), drop = F, limits = force) +
     facet_wrap(~sample, ncol = 1, drop = F) + 
     thm + 
     labs(
