@@ -96,9 +96,9 @@ A plot of sum of percent basal cover by arbitrary meter markings, top species, a
 sitesum_plo(cchadat, site, delim = 10, top = 8)
 ```
 
-A plot of sum of percent basal cover by arbitrary meter markings, top species, and for a select zone.
+A plot of sum of percent basal cover by arbitrary meter markings, top species, and for select zones.
 
 ```{r, height = 8, width = 8}
-sitesum_plo(cchadat, site, delim = 10, top = 8, zone_name = 'Mangrove Fringe')
+sitesum_plo(cchadat, site, delim = 10, top = 8, zone_name = c('Mangrove Fringe', 'Coastal Upland'))
 ```
 

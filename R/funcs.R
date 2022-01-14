@@ -284,12 +284,13 @@ sitezonesum_tab <- function(cchadat, site, zone = NULL, typ = c('fo', 'cover')){
 
 
 #' summarize species at a site, across zones, used for tabular or graphical summary
-sitesum_fun <- function(cchadat, site, delim, top, zone_name = NULL){
+sitesum_fun <- function(cchadat, site, delim, top, zone_name = NULL, torm = c('none/detritus', 'Open Water', 'Boardwalk')){
   
   dat <- cchadat %>% 
     filter(site %in% !!site) %>% 
     select(site, sample, meter, zone, zone_name, species, pcent_basal_cover) %>%
     tidyr::complete(species, tidyr::nesting(site, sample, zone, zone_name, meter), fill = list(pcent_basal_cover = 0)) %>% 
+    filter(!species %in% torm) %>% 
     mutate(species = factor(species))
 
   delims <- unique(dat$meter) %>% 
@@ -350,12 +351,14 @@ sitesum_plo <- function(cchadat, site, delim, top, zone_name = NULL){
   top <- min(c(top, length(unique(toplo$species))))
   leglab <- paste('Top', top, 'species')
   
-  nlev <- length(levels(toplo$species))
+  levs <- levels(toplo$species)
+  colin <- cols(length(levs))
+  names(colin) <- levs
   
   p <- ggplot(toplo, aes(x = meter_grp, y = yval, fill = species)) + 
     geom_bar(stat = 'identity', color = 'black') + 
     scale_x_discrete(drop = F) +
-    scale_fill_manual(values = cols(nlev), drop = F, limits = force) +
+    scale_fill_manual(values = colin, limits = force) +
     facet_wrap(~sample, ncol = 1, drop = F) + 
     thm + 
     labs(
