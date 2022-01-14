@@ -442,3 +442,92 @@ sppsum_plo <- function(cchadat, sp, typ = c('fo', 'cover'), thm){
   return(p)
   
 }
+
+#' summarise tree plot data into species by zone or just by zone
+treesum_fun <- function(treedat, byspecies = T, richonly = F){
+  
+  if(richonly){
+    
+    out <- treedat %>%  
+      group_by(site, sample, zone_name, zone) %>%
+      summarise(
+        n = length(unique(species))
+      ) %>% 
+      arrange(site, sample, zone)
+    
+    return(out)
+      
+  }
+  
+  # summarize by plot in each zone first, then density of trees in the zone
+  # this is used to get species densities in each zone
+  zonedens <- treedat %>% 
+    group_by(site, sample, zone_name, zone, plot) %>%
+    summarize(
+      trees_m2 = 12 / pi / sum(dist_to_tree_m ^ 2, na.rm = T),
+      cnt = n(),  
+      .groups = 'drop'
+    ) %>% 
+    mutate(
+      trees_m2 = case_when( # correction factor if four points were not sampled
+        cnt == 4 ~ trees_m2, 
+        cnt == 3 ~ trees_m2 * 0.58159, 
+        cnt == 2 ~ trees_m2 * 0.3393,
+        cnt == 1 ~ trees_m2 * 0.15351
+      )
+    ) %>% 
+    group_by(site, sample, zone_name, zone) %>% 
+    summarise(
+      trees_m2 = mean(trees_m2, na.rm = T), 
+      .groups = 'drop'
+    )
+  
+  # get species density summaries by zone
+  # uses results from above
+  zonesppsum <- treedat %>% 
+    group_by(site, sample, zone_name, zone) %>%
+    mutate(
+      dbh_cm_gr0 = sum(dbh_cm > 0), 
+      ba_cm2 = pi * (dbh_cm / 2) ^ 2, 
+      ba_cm2sum = sum(ba_cm2, na.rm = T)
+    ) %>% 
+    group_by(site, sample, zone_name, zone, species) %>%
+    inner_join(zonedens, by = c('site', 'sample', 'zone_name', 'zone')) %>% 
+    summarise(
+      trees_m2 = unique(trees_m2) * n() / unique(dbh_cm_gr0), 
+      cm2_m2 = mean(ba_cm2), 
+      relcov_per = 100 * sum(ba_cm2) / unique(ba_cm2sum),
+      .groups = 'drop'
+    ) %>% 
+    mutate(
+      trees_ha = trees_m2 * 1e4, 
+      m2_ha = trees_ha * cm2_m2 / 1e4
+    ) %>% 
+    pivot_longer(names_to = 'var', values_to = 'val', -matches(c('site', 'sample', 'zone_name', 'zone', 'species'))) %>% 
+    mutate(
+      varlab = case_when(
+        var == 'trees_m2' ~ 'Absolute species density (trees/m2)', 
+        var == 'cm2_m2' ~ 'Species average basal area (cm2/m2)', 
+        var == 'relcov_per' ~ 'Relative cover (%)', 
+        var == 'trees_ha' ~ 'Absolute species density (trees/ha)', 
+        var == 'm2_ha' ~ 'Species absolute cover (m2/ha)'  
+      )
+    )
+  
+  out <- zonesppsum
+  
+  # summarise the above across zone
+  if(!byspecies){
+    
+    out <- out %>% 
+      group_by(site, sample, zone_name, zone, var, varlab) %>% 
+      summarise(
+        val = sum(val, na.rm = T),
+        .groups = 'drop'
+      )
+    
+  }
+  
+  return(out)
+  
+}

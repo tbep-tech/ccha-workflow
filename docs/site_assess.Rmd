@@ -24,6 +24,7 @@ box::use(
 source(here('R/funcs.R'))
 
 load(file = here('data/cchadat.RData'))
+load(file = here('data/treedat.RData'))
 
 thm <- theme_minimal(base_size = 14) + 
   theme(
@@ -101,4 +102,3 @@ A plot of sum of percent basal cover by arbitrary meter markings, top species, a
 ```{r, height = 8, width = 8}
 sitesum_plo(cchadat, site, delim = 10, top = 8, zone_name = c('Mangrove Fringe', 'Coastal Upland'))
 ```
-

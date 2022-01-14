@@ -99,9 +99,7 @@ treedat <- treeraw %>%
     tree_height = `Tree height (m)`, 
     eye_height_m = `Eye Height (m)`, 
     dist_from_tree_m = `Dist. From Tree (m)`, 
-    angle = `Angle (degrees)`, 
-    r2 = R2, 
-    basal_area_cm2 = `BA Tree basal area (cm2)`
+    angle = `Angle (degrees)`
   ) %>% 
   mutate(
     date = mdy(date)
