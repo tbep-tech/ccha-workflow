@@ -76,3 +76,36 @@ save(cchadat, file = here('data/cchadat.RData'))
 #     lat = mean(lat), 
 #     .groups = 'drop'
 #   )
+
+# get tree data -----------------------------------------------------------
+
+# data here https://docs.google.com/spreadsheets/d/1gvIqr6aPD_-hKKi7ZQvLcBL_h3jg7XIbhYEEVWWbFzU/edit#gid=1492814788
+id <- '1gvIqr6aPD_-hKKi7ZQvLcBL_h3jg7XIbhYEEVWWbFzU'
+
+treeraw <- read_sheet(id, sheet = 'PCQ calculations',  col_types = 'cdcccdccdddddddddddddcddddd')
+
+treedat <- treeraw %>% 
+  select(
+    site = Site, 
+    sample = Period, 
+    date = Date, 
+    zone_name = `Zone name`, 
+    zone = Zone, 
+    plot = Plot, 
+    pcq_direction = `PCQ direction`, 
+    species = `Tree species`,
+    dist_to_tree_m = `Dist to tree (m)`, 
+    dbh_cm = `DBH (cm)`, 
+    tree_height = `Tree height (m)`, 
+    eye_height_m = `Eye Height (m)`, 
+    dist_from_tree_m = `Dist. From Tree (m)`, 
+    angle = `Angle (degrees)`, 
+    r2 = R2, 
+    basal_area_cm2 = `BA Tree basal area (cm2)`
+  ) %>% 
+  mutate(
+    date = mdy(date)
+  )
+
+save(treedat, file = here('data/treedat.RData'))
+
