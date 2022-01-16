@@ -75,26 +75,16 @@ sitezonedst_plo1 <- function(vegdat, site, thm){
     filter(site == !!site) %>% 
     select(zone_name, zone, sample, meter, date) %>% 
     unique %>% 
+    unite('zonefct', zone, zone_name, sep = ': ') %>%
     unite('sample', sample, date, sep = ': ') %>% 
     mutate(
-      sample = factor(sample, levels = rev(unique(sample)))
+      sample = factor(sample, levels = rev(unique(sample))),
+      zonect = factor(zonefct, levels = sort(unique(zonefct)))
     ) %>% 
-    group_by(sample, zone_name)
-  
-  levs <- toplo %>% 
-    filter(grepl('^1', sample)) %>%
-    select(zone_name, zone) %>% 
-    unique %>% 
-    filter(!duplicated(zone)) %>% 
-    pull(zone_name)
-  
-  toplo <- toplo %>% 
-    mutate(
-      zone_name = factor(zone_name, levels = levs)
-    )
+    group_by(sample, zonefct)
   
   p <- ggplot(toplo, aes(x = meter, y = sample)) + 
-    geom_line(aes(color = zone_name), stat = 'identity', lwd = 20, alpha = 0.7) + 
+    geom_line(aes(color = zonefct), stat = 'identity', lwd = 20, alpha = 0.7) + 
     scale_x_continuous(breaks = seq(0, max(toplo$meter), by = 10)) +
     guides(color = guide_legend(override.aes = list(lwd = 7))) +
     thm +
@@ -120,23 +110,25 @@ sitezonedst_plo2 <- function(vegdat, site, thm){
     select(zone_name, zone, sample, meter, date) %>% 
     unique %>% 
     unite('sample', sample, date, sep = ': ') %>% 
-    group_by(zone_name, zone, sample) %>% 
+    unite('zonefct', zone, zone_name, sep = ': ') %>%
+    mutate(
+      sample = factor(sample, levels = rev(unique(sample))),
+      zonect = factor(zonefct, levels = sort(unique(zonefct)))
+    ) %>% 
+    group_by(zonefct, sample) %>% 
     summarize(
       dist = max(meter) - min(meter), 
       .groups = 'drop'
-    ) %>% 
-    mutate(
-      zone_name = fct_reorder2(zone_name, sample, dist)
-    )
+    ) 
 
-  p <- ggplot(toplo, aes(x = sample, y = dist, color = zone_name, group = zone_name)) + 
+  p <- ggplot(toplo, aes(x = sample, y = dist, color = zonefct, group = zonefct)) + 
     geom_line(alpha = 0.7) +
     geom_point(size = 3) +
     thm + 
     labs(
       x = NULL, 
-      color = 'Zone name', 
-      fill = 'Zone name', 
+      color = 'Zone', 
+      fill = 'Zone', 
       y = 'Meters',
       subtitle = paste0('Site: ', site)
     )
@@ -152,30 +144,24 @@ sitezonedst_plo3 <- function(vegdat, site, thm){
 
   toplo <- vegdat %>% 
     filter(site == !!site) %>% 
-    filter(!species %in% tofilt)
-  
-  levs <- toplo %>% 
-    filter(grepl('^1', sample)) %>%
-    select(zone_name, zone) %>% 
+    filter(!species %in% tofilt) %>% 
     unique %>% 
-    filter(!duplicated(zone)) %>% 
-    pull(zone_name)
-
-  toplo <- toplo %>% 
+    unite('sample', sample, date, sep = ': ') %>% 
+    unite('zonefct', zone, zone_name, sep = ': ') %>% 
     mutate(
-      zone_name = factor(zone_name, levels = levs)
-    ) %>% 
-    unite('sample', sample, date, sep = ': ')
+      sample = factor(sample, levels = rev(unique(sample))),
+      zonect = factor(zonefct, levels = sort(unique(zonefct)))
+    )
   
-  p <- ggplot(toplo, aes(x = meter, y = species, height = pcent_basal_cover / 100, fill = zone_name, color = zone_name)) + 
+  p <- ggplot(toplo, aes(x = meter, y = species, height = pcent_basal_cover / 100, fill = zonefct, color = zonefct)) + 
     geom_ridgeline(stat = 'identity') + 
     scale_x_continuous(expand = c(0, 0), breaks = seq(0, max(toplo$meter), by = 20)) + 
     thm + 
     # theme(panel.grid.major.y = element_blank()) + 
     labs(
       x = 'Meters', 
-      color = 'Zone name', 
-      fill = 'Zone name', 
+      color = 'Zone', 
+      fill = 'Zone', 
       y = 'Species relative basal cover', 
       subtitle = paste0('Site: ', site)
     ) + 
@@ -186,32 +172,34 @@ sitezonedst_plo3 <- function(vegdat, site, thm){
 }
 
 #' summarize species at a site, zone optional, used for tabular or graphical summary
-sitezonesum_fun <- function(vegdat, site, zone_name = NULL, typ = c('fo', 'cover')){
+sitezonesum_fun <- function(vegdat, site, zonefct = NULL, typ = c('fo', 'cover')){
   
   typ <- match.arg(typ)
  
   dat <- vegdat %>% 
-    filter(site %in% !!site) 
+    filter(site %in% !!site) %>% 
+    unite('zonefct', zone, zone_name, sep = ': ') %>% 
+    mutate(zonect = factor(zonefct, levels = sort(unique(zonefct))))
   
   # make sure zone inputs are found at site
-  if(!is.null(zone_name)){
+  if(!is.null(zonefct)){
     
-    zns <- unique(dat$zone_name)
-    chk <- zone_name[!zone_name %in% zns] %>% 
+    zns <- unique(dat$zonefct)
+    chk <- zonefct[!zonefct %in% zns] %>% 
       paste(collapse = ', ')
     
     if(nchar(chk) != 0)
       stop(chk, ' zones not in ' , site, ', must be one of ', paste(zns, collapse = ', '))
     
     dat <- dat %>% 
-      filter(zone_name %in% !!zone_name) 
+      filter(zonefct %in% !!zonefct) 
     
   }
   
   # get complete data by filling species as zero
   dat <- dat %>% 
-    select(site, sample, meter, zone, zone_name, species, pcent_basal_cover) %>%
-    tidyr::complete(species, tidyr::nesting(site, sample, zone, zone_name, meter), fill = list(pcent_basal_cover = 0))
+    select(site, sample, meter, zonefct, species, pcent_basal_cover) %>%
+    tidyr::complete(species, tidyr::nesting(site, sample, zonefct, meter), fill = list(pcent_basal_cover = 0))
   
   # freq occ estimates
   if(typ == 'fo')
@@ -222,7 +210,7 @@ sitezonesum_fun <- function(vegdat, site, zone_name = NULL, typ = c('fo', 'cover
       ) %>%
       select(-pcent_basal_cover) %>%
       unique %>%
-      group_by(site, sample, zone, zone_name, species) %>%
+      group_by(site, sample, zonefct, species) %>%
       summarise(
         yval = sum(pa) / n(),
         .groups = 'drop'
@@ -233,7 +221,7 @@ sitezonesum_fun <- function(vegdat, site, zone_name = NULL, typ = c('fo', 'cover
     
     out <- dat %>% 
       unique %>% 
-      group_by(site, sample, zone, zone_name, species) %>% 
+      group_by(site, sample, zonefct, species) %>% 
       summarise(
         yval = mean(pcent_basal_cover) / 100, 
         .groups = 'drop'
@@ -247,11 +235,11 @@ sitezonesum_fun <- function(vegdat, site, zone_name = NULL, typ = c('fo', 'cover
 }
 
 # tabular output from sitezonesum_fun
-sitezonesum_tab <- function(vegdat, site, zone = NULL, typ = c('fo', 'cover')){
+sitezonesum_tab <- function(vegdat, site, zonefct = NULL, typ = c('fo', 'cover')){
 
   typ <- match.arg(typ)
   
-  totab <- sitezonesum_fun(vegdat, site, zone, typ)
+  totab <- sitezonesum_fun(vegdat, site, zonefct, typ)
   
   ylab <- 'Mean basal % cover'
   if(typ == 'fo')
@@ -262,15 +250,14 @@ sitezonesum_tab <- function(vegdat, site, zone = NULL, typ = c('fo', 'cover')){
       sample = paste('Phase', sample)
     ) %>% 
     pivot_wider(names_from = 'sample', values_from = 'yval', values_fill = NA) %>%
-    arrange(zone, species) %>% 
-    unite('zone_name', zone, zone_name, sep = ': ')
+    arrange(zonefct, species) 
   
   tab <- reactable(
     totab,
-    groupBy = c('zone_name'),
+    groupBy = c('zonefct'),
     columns = list(
       site = colDef(show = F),
-      zone_name = colDef(name = 'Zone', minWidth = 200),
+      zonefct = colDef(name = 'Zone', minWidth = 200),
       species = colDef(name = 'Species', minWidth = 200)
     ), 
     defaultColDef = colDef(format = colFormat(digits = 1, percent = T)), 
@@ -284,12 +271,14 @@ sitezonesum_tab <- function(vegdat, site, zone = NULL, typ = c('fo', 'cover')){
 
 
 #' summarize species at a site, across zones, used for tabular or graphical summary
-sitesum_fun <- function(vegdat, site, delim, top, zone_name = NULL, torm = c('none/detritus', 'Open Water', 'Boardwalk')){
+sitesum_fun <- function(vegdat, site, delim, top, zonefct = NULL, torm = c('none/detritus', 'Open Water', 'Boardwalk')){
   
   dat <- vegdat %>% 
     filter(site %in% !!site) %>% 
-    select(site, sample, meter, zone, zone_name, species, pcent_basal_cover) %>%
-    tidyr::complete(species, tidyr::nesting(site, sample, zone, zone_name, meter), fill = list(pcent_basal_cover = 0)) %>% 
+    unite('zonefct', zone, zone_name, sep = ': ') %>% 
+    mutate(zonect = factor(zonefct, levels = sort(unique(zonefct)))) %>% 
+    select(site, sample, meter, zonefct, species, pcent_basal_cover) %>%
+    tidyr::complete(species, tidyr::nesting(site, sample, zonefct, meter), fill = list(pcent_basal_cover = 0)) %>% 
     filter(!species %in% torm) %>% 
     mutate(species = factor(species))
 
@@ -301,17 +290,17 @@ sitesum_fun <- function(vegdat, site, delim, top, zone_name = NULL, torm = c('no
   lbs <- round(delims, 0)[-length(delims)]
   
   # make sure zone inputs are found at site
-  if(!is.null(zone_name)){
+  if(!is.null(zonefct)){
     
-    zns <- unique(dat$zone_name)
-    chk <- zone_name[!zone_name %in% zns] %>% 
+    zns <- unique(dat$zonefct)
+    chk <- zonefct[!zonefct %in% zns] %>% 
       paste(collapse = ', ')
     
     if(nchar(chk) != 0)
       stop(chk, ' zones not in ' , site, ', must be one of ', paste(zns, collapse = ', '))
     
     dat <- dat %>% 
-      filter(zone_name %in% !!zone_name) 
+      filter(zonefct %in% !!zonefct) 
     
   }
 
@@ -338,9 +327,9 @@ sitesum_fun <- function(vegdat, site, delim, top, zone_name = NULL, torm = c('no
 }
 
 # plot results for sitesum_fun
-sitesum_plo <- function(vegdat, site, delim, top, zone_name = NULL){
+sitesum_plo <- function(vegdat, site, delim, top, zonefct = NULL){
   
-  toplo <- sitesum_fun(vegdat, site, delim, top, zone_name) %>% 
+  toplo <- sitesum_fun(vegdat, site, delim, top, zonefct) %>% 
     mutate(
       sample = paste0('Phase ', sample)
     )
@@ -444,13 +433,35 @@ sppsum_plo <- function(vegdat, sp, typ = c('fo', 'cover'), thm){
 }
 
 #' summarise tree plot data into species by zone or just by zone
-treesum_fun <- function(treedat, site, byspecies = T){
+treesum_fun <- function(treedat, site, byspecies = T, zonefct = NULL,
+                        var = c("cm2_m2", "m2_ha", "relcov_per", "trees_ha", "trees_m2", "rich")){
+  
+  var <- match.arg(var)
+  
+  dat <- treedat %>% 
+    filter(site %in% !!site) %>% 
+    unite('zonefct', zone, zone_name, sep = ': ') %>% 
+    mutate(zonect = factor(zonefct, levels = sort(unique(zonefct))))
+  
+  # make sure zone inputs are found at site
+  if(!is.null(zonefct)){
+    
+    zns <- unique(dat$zonefct)
+    chk <- zonefct[!zonefct %in% zns] %>% 
+      paste(collapse = ', ')
+    
+    if(nchar(chk) != 0)
+      stop(chk, ' zones not in ' , site, ', must be one of ', paste(zns, collapse = ', '))
+    
+    dat <- dat %>% 
+      filter(zonefct %in% !!zonefct) 
+    
+  }
   
   # summarize by plot in each zone first, then density of trees in the zone
   # this is used to get species densities in each zone
-  zonedens <- treedat %>% 
-    filter(site %in% !!site) %>% 
-    group_by(site, sample, zone_name, zone, plot) %>%
+  zonedens <- dat %>% 
+    group_by(site, sample, zonefct, plot) %>%
     summarize(
       trees_m2 = 12 / pi / sum(dist_to_tree_m ^ 2, na.rm = T),
       cnt = n(),  
@@ -464,7 +475,7 @@ treesum_fun <- function(treedat, site, byspecies = T){
         cnt == 1 ~ trees_m2 * 0.15351
       )
     ) %>% 
-    group_by(site, sample, zone_name, zone) %>% 
+    group_by(site, sample, zonefct) %>% 
     summarise(
       trees_m2 = mean(trees_m2, na.rm = T), 
       .groups = 'drop'
@@ -472,20 +483,19 @@ treesum_fun <- function(treedat, site, byspecies = T){
   
   # get species density summaries by zone
   # uses results from above
-  zonesppsum <- treedat %>% 
-    filter(site %in% !!site) %>% 
-    group_by(site, sample, zone_name, zone) %>%
+  zonesppsum <- dat %>%  
+    group_by(site, sample, zonefct) %>%
     mutate(
-      dbh_cm_gr0 = sum(dbh_cm > 0), 
+      dbh_cm_gr0 = sum(dbh_cm > 0, na.rm = T), 
       ba_cm2 = pi * (dbh_cm / 2) ^ 2, 
       ba_cm2sum = sum(ba_cm2, na.rm = T)
     ) %>% 
-    group_by(site, sample, zone_name, zone, species) %>%
-    inner_join(zonedens, by = c('site', 'sample', 'zone_name', 'zone')) %>% 
+    group_by(site, sample, zonefct, species) %>%
+    inner_join(zonedens, by = c('site', 'sample', 'zonefct')) %>% 
     summarise(
       trees_m2 = unique(trees_m2) * n() / unique(dbh_cm_gr0), 
-      cm2_m2 = mean(ba_cm2), 
-      relcov_per = 100 * sum(ba_cm2) / unique(ba_cm2sum),
+      cm2_m2 = mean(ba_cm2, na.rm = T), 
+      relcov_per = 100 * sum(ba_cm2, na.rm = T) / unique(ba_cm2sum),
       .groups = 'drop'
     ) %>% 
     mutate(
@@ -509,7 +519,7 @@ treesum_fun <- function(treedat, site, byspecies = T){
   if(!byspecies){
 
     richdat <- out %>%  
-      group_by(site, sample, zone_name, zone) %>%
+      group_by(site, sample, zonefct) %>%
       summarise(
         val = length(unique(species)), 
         .groups = 'drop'
@@ -520,15 +530,18 @@ treesum_fun <- function(treedat, site, byspecies = T){
       )
     
     out <- out %>% 
-      group_by(site, sample, zone_name, zone, var, varlab) %>% 
+      group_by(site, sample, zonefct, var, varlab) %>% 
       summarise(
         val = sum(val, na.rm = T),
         .groups = 'drop'
       ) %>% 
       bind_rows(richdat) %>% 
-      arrange(site, sample, zone)
+      arrange(site, sample, zonefct)
     
   }
+  
+  out <- out %>% 
+    filter(var %in% !!var)
   
   return(out)
   

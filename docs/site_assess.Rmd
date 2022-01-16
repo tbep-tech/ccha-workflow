@@ -34,7 +34,6 @@ thm <- theme_minimal(base_size = 14) +
 # test args
 site <- 'Big Bend - TECO'
 sp <- 'Avicennia germinans'
-zones <- c("Brazilian Pepper Berm", "Coastal Upland", "Immature Mangrove Fringe", "Mangrove Fringe", "Salt Barren", "Salt Marsh", "Transitional Wetland")
 ```
 
 Plot showing number of times a zone was identified across transects, dates.
@@ -100,5 +99,5 @@ sitesum_plo(vegdat, site, delim = 10, top = 8)
 A plot of sum of percent basal cover by arbitrary meter markings, top species, and for select zones.
 
 ```{r, height = 8, width = 8}
-sitesum_plo(vegdat, site, delim = 10, top = 8, zone_name = c('Mangrove Fringe', 'Coastal Upland'))
+sitesum_plo(vegdat, site, delim = 10, top = 8, zonefct = c('A: Mangrove Fringe', 'G: Coastal Upland'))
 ```
