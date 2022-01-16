@@ -444,20 +444,7 @@ sppsum_plo <- function(cchadat, sp, typ = c('fo', 'cover'), thm){
 }
 
 #' summarise tree plot data into species by zone or just by zone
-treesum_fun <- function(treedat, byspecies = T, richonly = F){
-  
-  if(richonly){
-    
-    out <- treedat %>%  
-      group_by(site, sample, zone_name, zone) %>%
-      summarise(
-        n = length(unique(species))
-      ) %>% 
-      arrange(site, sample, zone)
-    
-    return(out)
-      
-  }
+treesum_fun <- function(treedat, byspecies = T){
   
   # summarize by plot in each zone first, then density of trees in the zone
   # this is used to get species densities in each zone
@@ -518,13 +505,26 @@ treesum_fun <- function(treedat, byspecies = T, richonly = F){
   
   # summarise the above across zone
   if(!byspecies){
+
+    richdat <- out %>%  
+      group_by(site, sample, zone_name, zone) %>%
+      summarise(
+        val = length(unique(species)), 
+        .groups = 'drop'
+      ) %>% 
+      mutate(
+        var = 'rich', 
+        varlab = 'Species richness'
+      )
     
     out <- out %>% 
       group_by(site, sample, zone_name, zone, var, varlab) %>% 
       summarise(
         val = sum(val, na.rm = T),
         .groups = 'drop'
-      )
+      ) %>% 
+      bind_rows(richdat) %>% 
+      arrange(site, sample, zone)
     
   }
   
