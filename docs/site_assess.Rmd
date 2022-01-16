@@ -16,9 +16,12 @@ box::use(
   tidyr[...],
   dplyr[...], 
   ggridges[...],
+  reactable[...],
   lubridate[ymd], 
+  stringr[str_wrap],
   forcats[fct_reorder2], 
-  reactable[...]
+  htmltools[h5], 
+  htmlwidgets[prependContent]
 )
 
 source(here('R/funcs.R'))
@@ -92,12 +95,36 @@ sitezonesum_tab(vegdat, site = site, typ = 'cover')
 
 A plot of sum of percent basal cover by arbitrary meter markings, top species, and across zones.
 
-```{r, height = 8, width = 8}
+```{r, fig.height = 6, fig.width = 10}
 sitesum_plo(vegdat, site, delim = 10, top = 8)
 ```
 
 A plot of sum of percent basal cover by arbitrary meter markings, top species, and for select zones.
 
-```{r, height = 8, width = 8}
+```{r, fig.height = 6, fig.width = 10}
 sitesum_plo(vegdat, site, delim = 10, top = 8, zonefct = c('A: Mangrove Fringe', 'G: Coastal Upland'))
+```
+
+Tabular summary of tree data by site, species.
+
+```{r}
+treesum_tab(treedat, site = site, byspecies = T, var = 'trees_ha')
+```
+
+Same table as above, but aggregated across species.
+
+```{r}
+treesum_tab(treedat, site = site, byspecies = F, var = 'trees_ha')
+```
+
+Tree summary plot by site, species.
+
+```{r, fig.height = 6, fig.width = 10}
+treesum_plo(treedat, site = site, byspecies = T, var = 'trees_ha')
+```
+
+Tree summary plot, but aggregated across species.
+
+```{r, fig.height = 6, fig.width = 10}
+treesum_plo(treedat, site = site, byspecies = F, var = 'trees_ha')
 ```

@@ -438,10 +438,16 @@ treesum_fun <- function(treedat, site, byspecies = T, zonefct = NULL,
   
   var <- match.arg(var)
   
+  if(byspecies & var == 'rich')
+    stop('Cannot use var = "rich" with byspecies = "TRUE"')
+  
   dat <- treedat %>% 
     filter(site %in% !!site) %>% 
     unite('zonefct', zone, zone_name, sep = ': ') %>% 
-    mutate(zonect = factor(zonefct, levels = sort(unique(zonefct))))
+    mutate(
+      zonefct = factor(zonefct, levels = sort(unique(zonefct))), 
+      species = factor(species)
+    )
   
   # make sure zone inputs are found at site
   if(!is.null(zonefct)){
@@ -544,5 +550,100 @@ treesum_fun <- function(treedat, site, byspecies = T, zonefct = NULL,
     filter(var %in% !!var)
   
   return(out)
+  
+}
+
+#' tree site summary table
+treesum_tab <- function(treedat, site, byspecies = T, zonefct = NULL,
+                        var = c("cm2_m2", "m2_ha", "relcov_per", "trees_ha", "trees_m2", "rich")){
+  
+  totab <- treesum_fun(treedat, site = site, byspecies = byspecies, zonefct = zonefct, var = var) %>% 
+    mutate(
+      sample = paste('Phase', sample)
+    ) %>% 
+    pivot_wider(names_from = 'sample', values_from = 'val', values_fill = NA) %>%
+    arrange(zonefct) 
+  
+  if(byspecies)
+    tab <- reactable(
+      totab,
+      groupBy = c('zonefct'),
+      columns = list(
+        var = colDef(show = F),
+        varlab = colDef(show = F),
+        site = colDef(show = F),
+        zonefct = colDef(name = 'Zone', minWidth = 200),
+        species = colDef(name = 'Species', minWidth = 200)
+      ), 
+      defaultColDef = colDef(format = colFormat(digits = 1)), 
+      resizable = T, 
+      defaultExpanded = F
+    )
+  
+  if(!byspecies)
+    tab <- reactable(
+      totab,
+      columns = list(
+        var = colDef(show = F),
+        varlab = colDef(show = F),
+        site = colDef(show = F),
+        zonefct = colDef(name = 'Zone', minWidth = 200)
+      ), 
+      defaultColDef = colDef(format = colFormat(digits = 1)), 
+      resizable = T, 
+      defaultExpanded = F
+    )
+
+  
+  ttl <- paste(site, unique(totab$varlab), sep = ', ')
+  out <-  prependContent(tab, h5(class = "title", ttl))
+  
+  return(out)
+  
+}
+
+#' tree site summary plot
+treesum_plo <- function(treedat, site, byspecies, zonefct = NULL, var){
+  
+  toplo <- treesum_fun(treedat, site, byspecies, zonefct, var) %>% 
+    mutate(
+      sample = paste('Phase', sample)
+    )
+  
+  cols <- RColorBrewer::brewer.pal(8, 'Accent') %>% 
+    colorRampPalette(.)
+  
+  levs <- levels(toplo$species)
+  colin <- cols(length(levs))
+  names(colin) <- levs
+  
+  leglab <- unique(toplo$varlab)
+  
+  if(byspecies)
+    p <- ggplot(toplo, aes(x = zonefct, y = val, fill = species)) + 
+      geom_bar(stat = 'identity', color = 'black') + 
+      scale_x_discrete(drop = F, labels = function(x) str_wrap(x, width = 10)) +
+      scale_fill_manual(values = colin, limits = force) +
+      facet_wrap(~sample, ncol = 1, drop = F) + 
+      thm + 
+      labs(
+        y = leglab,
+        x = NULL, 
+        fill = 'Species'
+      )
+  
+  if(!byspecies)
+    p <- ggplot(toplo, aes(x = zonefct, y = val)) + 
+      geom_bar(stat = 'identity', color = 'black') + 
+      scale_x_discrete(drop = F, labels = function(x) str_wrap(x, width = 10)) +
+      facet_wrap(~sample, ncol = 1, drop = F) + 
+      thm + 
+      labs(
+        y = leglab,
+        x = NULL, 
+        fill = 'Species'
+      )
+  
+  return(p)
   
 }
