@@ -444,11 +444,12 @@ sppsum_plo <- function(cchadat, sp, typ = c('fo', 'cover'), thm){
 }
 
 #' summarise tree plot data into species by zone or just by zone
-treesum_fun <- function(treedat, byspecies = T){
+treesum_fun <- function(treedat, site, byspecies = T){
   
   # summarize by plot in each zone first, then density of trees in the zone
   # this is used to get species densities in each zone
   zonedens <- treedat %>% 
+    filter(site %in% !!site) %>% 
     group_by(site, sample, zone_name, zone, plot) %>%
     summarize(
       trees_m2 = 12 / pi / sum(dist_to_tree_m ^ 2, na.rm = T),
@@ -472,6 +473,7 @@ treesum_fun <- function(treedat, byspecies = T){
   # get species density summaries by zone
   # uses results from above
   zonesppsum <- treedat %>% 
+    filter(site %in% !!site) %>% 
     group_by(site, sample, zone_name, zone) %>%
     mutate(
       dbh_cm_gr0 = sum(dbh_cm > 0), 
