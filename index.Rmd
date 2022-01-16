@@ -1,0 +1,285 @@
+---
+output: 
+  html_document:
+    anchor_sections: TRUE
+css: styles.css
+runtime: shiny
+---
+
+```{r setup, echo = F, message = F, warning = F}
+knitr::opts_chunk$set(echo = F, warning = F, message = F)
+
+library(here)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(ggridges)
+library(reactable)
+library(shiny)
+library(lubridate)
+library(stringr)
+library(forcats)
+library(htmltools)
+library(htmlwidgets)
+library(shinyWidgets)
+
+source(here('R/funcs.R'))
+
+load(file = here('data/vegdat.RData'))
+load(file = here('data/treedat.RData'))
+
+thm <- theme_minimal(base_size = 14) + 
+  theme(
+    panel.grid.minor = element_blank() 
+  )
+
+# initial options
+sitopt <- unique(vegdat$site)
+sppopt <- unique(vegdat$species) %>% sort
+
+# # style file
+# styles <- readLines('https://raw.githubusercontent.com/tbep-tech/css-styling/master/styles.css')
+# writeLines(styles, 'styles.css')
+```
+
+```{r reactives}
+# Initial site plot
+sitplo1 <- reactive({
+  
+  # input
+  sitsel <- input$sitsel
+  
+  out <- sitezonedst_plo1(vegdat, site = sitsel, thm)
+  
+  return(out)
+  
+})
+
+# tabular vegetation summary by site
+vegtab1 <- reactive({
+  
+  # input
+  sitsel <- input$sitsel
+  zonsel1 <- input$zonsel1
+  varsel1 <- input$varsel1
+
+  req(zonsel1)
+  
+  out <- sitezonesum_tab(vegdat, sitsel, zonsel1, varsel1)
+
+  return(out)
+  
+})
+
+# plot vegetation summary by site
+vegplo1 <- reactive({
+  
+  # input
+  sitsel <- input$sitsel
+  zonsel1 <- input$zonsel1
+  varsel1 <- input$varsel1
+  topsel <- input$topsel
+  metsel <- input$metsel
+
+  req(zonsel1)
+  
+  out <- sitesum_plo(vegdat, sitsel, delim = metsel, top = topsel, var = varsel1, zonefct = zonsel1, thm = thm)
+  
+  return(out)
+  
+})
+
+# summary plot by species, all sites
+vegplo2 <- reactive({
+  
+  # input
+  sitsel <- input$sitsel
+  zonsel1 <- input$zonsel1
+  
+  req(zonsel1)
+  
+  out <- sitezonedst_plo3(vegdat, sitsel, zonefct = zonsel1, thm = thm)
+  
+  return(out)
+  
+})
+
+# tabular tree summary by site
+treetab1 <- reactive({
+  
+  # input
+  sitsel <- input$sitsel
+  zonsel2 <- input$zonsel2
+  varsel2 <- input$varsel2
+  aggsel <- input$aggsel
+
+  req(zonsel2)
+  
+  out <- treesum_tab(treedat, sitsel, byspecies = aggsel, zonefct = zonsel2, var = varsel2)
+  
+  return(out)
+  
+})
+
+# plot tree summary by site
+treeplo1 <- reactive({
+  
+  # input
+  sitsel <- input$sitsel
+  zonsel2 <- input$zonsel2
+  varsel2 <- input$varsel2
+  aggsel <- input$aggsel
+
+  req(zonsel2)
+  
+  out <- treesum_plo(treedat, sitsel, byspecies = aggsel, zonefct = zonsel2, var = varsel2, thm = thm)
+  
+  return(out)
+  
+})
+
+# summary plot by species, all sites
+allplo1 <- reactive({
+  
+  # input
+  sppsel <- input$sppsel
+  varsel3 <- input$varsel3
+  
+  out <- sppsum_plo(vegdat, sppsel, var = varsel3, thm)
+  
+  return(out)
+  
+})
+```
+
+# {.tabset}
+
+## By site {.tabset .tabset-pills}
+
+```{r}
+column(12,  
+  column(6, selectInput('sitsel', 'Select site:', choices = sitopt, width = '100%'))
+)
+```
+
+```{r}
+output$sitplo1 <- renderPlot(sitplo1())
+column(12, plotOutput('sitplo1'))
+```
+
+### Vegation
+
+```{r}
+column(12, 
+  column(6, 
+    renderUI({
+      
+      # input
+      sitsel <- input$sitsel
+      
+      tosel <- vegdat %>% 
+        filter(site %in% !!sitsel) %>% 
+        unite('zonefct', zone, zone_name, sep = ': ') %>% 
+        mutate(zonefct = factor(zonefct, levels = sort(unique(zonefct)))) %>% 
+        pull(zonefct) %>% 
+        levels
+      
+      selectInput('zonsel1', 'Select zone:', choices = tosel, selectize = T, multiple = T, selected = tosel, width = '100%')
+      
+    })
+  ),
+  column(6, 
+    selectInput('varsel1', 'Select summary variable:', choices = list('Freq. Occ (%)' = 'fo', 'Basal cover (%)' = 'cover'), width = '100%')
+  )
+)
+```
+
+<br></br>
+```{r}
+output$vegtab1 <- renderReactable(vegtab1())
+column(12, reactableOutput('vegtab1'))
+```
+
+```{r}
+column(12, 
+  column(6, sliderInput('topsel', 'Select number of species:', min = 1, max = 30, step = 1, value = 10, width = '100%')),
+  column(6, sliderInput('metsel', 'Select number of meter bins:', min  = 1, max = 30, step = 1, value = 10, width = '100%'))
+)
+```
+
+```{r}
+output$vegplo1 <- renderPlot(vegplo1())
+column(12, plotOutput('vegplo1'))
+```
+
+```{r}
+output$vegplo2 <- renderPlot(vegplo2())
+column(12, plotOutput('vegplo2'))
+```
+
+### Tree
+
+```{r}
+column(12, 
+  column(6, 
+    renderUI({
+      
+      # input
+      sitsel <- input$sitsel
+      
+      tosel <- treedat %>% 
+        filter(site %in% !!sitsel) %>% 
+        unite('zonefct', zone, zone_name, sep = ': ') %>% 
+        mutate(zonefct = factor(zonefct, levels = sort(unique(zonefct)))) %>% 
+        pull(zonefct)
+      
+      selectInput('zonsel2', 'Select zone:', choices = tosel, selectize = T, multiple = T, selected = tosel, width = '100%')
+      
+    })
+  ), 
+  column(6, 
+    selectInput('varsel2', 'Select summary variable:', 
+      choices = list(
+        'Absolute species density (trees/m2)' = 'trees_m2',
+        'Absolute species density (trees/ha)'= 'trees_ha', 
+        'Species average basal area (cm2/m2)' =  'cm2_m2',
+        'Species absolute cover (m2/ha)' = 'm2_ha', 
+        'Relative cover (%)' = 'relcov_per'
+      ),
+      width = '100%'
+    )
+  )
+)
+column(12, 
+  column(6, 
+    materialSwitch(inputId = 'aggsel', label = 'Show results by species?', value = T, width = '100%')
+  )
+)
+```
+
+```{r}
+output$treetab1 <- renderReactable(treetab1())
+column(12, reactableOutput('treetab1'))
+```
+
+```{r}
+output$treeplo1 <- renderPlot(treeplo1())
+column(12, plotOutput('treeplo1'))
+```
+
+## Across sites
+
+Summaries are for vegetation data only. 
+
+```{r}
+column(12, 
+  column(6, selectInput('sppsel', 'Select species:', choices = sppopt, width = '100%')),
+  column(6, selectInput('varsel3', 'Select summary variable:', choices = list('Freq. Occ (%)' = 'fo', 'Basal cover (%)' = 'cover'), width = '100%'))
+)
+```
+
+```{r}
+output$allplo1 <- renderPlot(allplo1())
+column(12, plotOutput('allplo1'))
+```
+

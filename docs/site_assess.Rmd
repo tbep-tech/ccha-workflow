@@ -72,13 +72,13 @@ sitezonedst_plo3(vegdat, site, thm)
 An evaluation of a single species across all sites, can be shown as frequency occurrence across the transect or mean percent basal cover. This example shows frequency occurrence of *Avicennia germinans*. 
 
 ```{r, fig.height = 4, fig.width = 12}
-sppsum_plo(vegdat, sp, typ = 'fo', thm)
+sppsum_plo(vegdat, sp, var = 'fo', thm)
 ```
 
 And now average percent basal cover. 
 
 ```{r, fig.height = 4, fig.width = 12}
-sppsum_plo(vegdat, sp, typ = 'cover', thm)
+sppsum_plo(vegdat, sp, var = 'cover', thm)
 ```
 
 A table of species frequency occurrence by zone, over time: 
@@ -90,19 +90,19 @@ sitezonesum_tab(vegdat, site = site)
 Same thing but as percent basal cover.
 
 ```{r}
-sitezonesum_tab(vegdat, site = site, typ = 'cover')
+sitezonesum_tab(vegdat, site = site, var = 'cover')
 ```
 
 A plot of sum of percent basal cover by arbitrary meter markings, top species, and across zones.
 
 ```{r, fig.height = 6, fig.width = 10}
-sitesum_plo(vegdat, site, delim = 10, top = 8)
+sitesum_plo(vegdat, site, delim = 10, top = 8, var = 'cover', thm = thm)
 ```
 
 A plot of sum of percent basal cover by arbitrary meter markings, top species, and for select zones.
 
 ```{r, fig.height = 6, fig.width = 10}
-sitesum_plo(vegdat, site, delim = 10, top = 8, zonefct = c('A: Mangrove Fringe', 'G: Coastal Upland'))
+sitesum_plo(vegdat, site, delim = 10, top = 8, var = 'cover', zonefct = c('A: Mangrove Fringe', 'G: Coastal Upland'), thm = thm)
 ```
 
 Tabular summary of tree data by site, species.
@@ -120,11 +120,11 @@ treesum_tab(treedat, site = site, byspecies = F, var = 'trees_ha')
 Tree summary plot by site, species.
 
 ```{r, fig.height = 6, fig.width = 10}
-treesum_plo(treedat, site = site, byspecies = T, var = 'trees_ha')
+treesum_plo(treedat, site = site, byspecies = T, var = 'trees_ha', thm = thm)
 ```
 
 Tree summary plot, but aggregated across species.
 
 ```{r, fig.height = 6, fig.width = 10}
-treesum_plo(treedat, site = site, byspecies = F, var = 'trees_ha')
+treesum_plo(treedat, site = site, byspecies = F, var = 'trees_ha', thm = thm)
 ```
