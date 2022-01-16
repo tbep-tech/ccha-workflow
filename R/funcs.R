@@ -1,7 +1,7 @@
 #' Plot showing number of times a zone was identified across transects, dates
-zonecnt_plo <- function(cchadat, thm){
+zonecnt_plo <- function(vegdat, thm){
   
-  toplo <- cchadat %>%
+  toplo <- vegdat %>%
     select(site, sample, zone_name) %>% 
     unique %>% 
     filter(!is.na(zone_name)) %>% 
@@ -32,9 +32,9 @@ zonecnt_plo <- function(cchadat, thm){
 }
 
 # Plot showing total distance zone was recorded across transect, dates
-zonedst_plo <- function(cchadat, thm){
+zonedst_plo <- function(vegdat, thm){
   
-  toplo <- cchadat %>%
+  toplo <- vegdat %>%
     select(site, sample, zone_name, meter) %>% 
     unique %>% 
     filter(!is.na(zone_name)) %>% 
@@ -69,9 +69,9 @@ zonedst_plo <- function(cchadat, thm){
 }
 
 #' site zone distance by date, continuous
-sitezonedst_plo1 <- function(cchadat, site, thm){
+sitezonedst_plo1 <- function(vegdat, site, thm){
 
-  toplo <- cchadat %>% 
+  toplo <- vegdat %>% 
     filter(site == !!site) %>% 
     select(zone_name, zone, sample, meter, date) %>% 
     unique %>% 
@@ -113,9 +113,9 @@ sitezonedst_plo1 <- function(cchadat, site, thm){
 }
 
 #' site zone distance by date, by zone
-sitezonedst_plo2 <- function(cchadat, site, thm){
+sitezonedst_plo2 <- function(vegdat, site, thm){
   
-  toplo <- cchadat %>% 
+  toplo <- vegdat %>% 
     filter(site == !!site) %>% 
     select(zone_name, zone, sample, meter, date) %>% 
     unique %>% 
@@ -146,11 +146,11 @@ sitezonedst_plo2 <- function(cchadat, site, thm){
 }
 
 #' site zone distance by date, species
-sitezonedst_plo3 <- function(cchadat, site, thm){
+sitezonedst_plo3 <- function(vegdat, site, thm){
   
   tofilt <- c('Unknown', 'Open Water', 'none/detritus', 'Woody Debris')
 
-  toplo <- cchadat %>% 
+  toplo <- vegdat %>% 
     filter(site == !!site) %>% 
     filter(!species %in% tofilt)
   
@@ -186,11 +186,11 @@ sitezonedst_plo3 <- function(cchadat, site, thm){
 }
 
 #' summarize species at a site, zone optional, used for tabular or graphical summary
-sitezonesum_fun <- function(cchadat, site, zone_name = NULL, typ = c('fo', 'cover')){
+sitezonesum_fun <- function(vegdat, site, zone_name = NULL, typ = c('fo', 'cover')){
   
   typ <- match.arg(typ)
  
-  dat <- cchadat %>% 
+  dat <- vegdat %>% 
     filter(site %in% !!site) 
   
   # make sure zone inputs are found at site
@@ -247,11 +247,11 @@ sitezonesum_fun <- function(cchadat, site, zone_name = NULL, typ = c('fo', 'cove
 }
 
 # tabular output from sitezonesum_fun
-sitezonesum_tab <- function(cchadat, site, zone = NULL, typ = c('fo', 'cover')){
+sitezonesum_tab <- function(vegdat, site, zone = NULL, typ = c('fo', 'cover')){
 
   typ <- match.arg(typ)
   
-  totab <- sitezonesum_fun(cchadat, site, zone, typ)
+  totab <- sitezonesum_fun(vegdat, site, zone, typ)
   
   ylab <- 'Mean basal % cover'
   if(typ == 'fo')
@@ -284,9 +284,9 @@ sitezonesum_tab <- function(cchadat, site, zone = NULL, typ = c('fo', 'cover')){
 
 
 #' summarize species at a site, across zones, used for tabular or graphical summary
-sitesum_fun <- function(cchadat, site, delim, top, zone_name = NULL, torm = c('none/detritus', 'Open Water', 'Boardwalk')){
+sitesum_fun <- function(vegdat, site, delim, top, zone_name = NULL, torm = c('none/detritus', 'Open Water', 'Boardwalk')){
   
-  dat <- cchadat %>% 
+  dat <- vegdat %>% 
     filter(site %in% !!site) %>% 
     select(site, sample, meter, zone, zone_name, species, pcent_basal_cover) %>%
     tidyr::complete(species, tidyr::nesting(site, sample, zone, zone_name, meter), fill = list(pcent_basal_cover = 0)) %>% 
@@ -338,9 +338,9 @@ sitesum_fun <- function(cchadat, site, delim, top, zone_name = NULL, torm = c('n
 }
 
 # plot results for sitesum_fun
-sitesum_plo <- function(cchadat, site, delim, top, zone_name = NULL){
+sitesum_plo <- function(vegdat, site, delim, top, zone_name = NULL){
   
-  toplo <- sitesum_fun(cchadat, site, delim, top, zone_name) %>% 
+  toplo <- sitesum_fun(vegdat, site, delim, top, zone_name) %>% 
     mutate(
       sample = paste0('Phase ', sample)
     )
@@ -372,7 +372,7 @@ sitesum_plo <- function(cchadat, site, delim, top, zone_name = NULL){
 }
 
 #' single species summary across sites, zones
-sppsum_plo <- function(cchadat, sp, typ = c('fo', 'cover'), thm){
+sppsum_plo <- function(vegdat, sp, typ = c('fo', 'cover'), thm){
   
   typ <- match.arg(typ)
   
@@ -381,7 +381,7 @@ sppsum_plo <- function(cchadat, sp, typ = c('fo', 'cover'), thm){
     dgval <- 0
     ylab <- 'Freq. Occ.'
     
-    toplo <- cchadat %>% 
+    toplo <- vegdat %>% 
       group_by(site, sample, meter) %>% 
       summarise(
         pres = sp %in% species,
@@ -400,7 +400,7 @@ sppsum_plo <- function(cchadat, sp, typ = c('fo', 'cover'), thm){
     dgval <- 0.1
     ylab <- 'Mean % basal cover (+/- 95% CI)'
     
-    toplo <- cchadat %>%
+    toplo <- vegdat %>%
       select(site, sample, meter, species, pcent_basal_cover) %>% 
       tidyr::complete(species, tidyr::nesting(site, sample, meter), fill = list(pcent_basal_cover = 0)) %>%
       filter(species %in% !!sp) %>% 

@@ -18,10 +18,10 @@ drive_deauth()
 id <- '1x_ytLD6ro--QzcCClnDvFC04m7PmbVbtReVQkNktyd4'
 
 # do not use individual year sheets because the zone names are not corrected
-ccharaw <- read_sheet(id, sheet = 'AllVeg', col_types = 'cdcccdccd')
+vegraw <- read_sheet(id, sheet = 'AllVeg', col_types = 'cdcccdccd')
 
 # combine, minor data edits
-cchadat <- ccharaw %>% 
+vegdat <- vegraw %>% 
   rename(
     species = Vegetation_species, 
     sample = `Sample_Set`
@@ -62,7 +62,7 @@ cchadat <- ccharaw %>%
   filter(!is.na(site)) %>% 
   arrange(site, sample, meter)
 
-save(cchadat, file = here('data/cchadat.RData'))
+save(vegdat, file = here('data/vegdat.RData'))
 
 # cchaloc <- read_sheet(id, sheet = 'ZoneData') %>% 
 #   select(

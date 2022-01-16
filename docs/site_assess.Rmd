@@ -23,7 +23,7 @@ box::use(
 
 source(here('R/funcs.R'))
 
-load(file = here('data/cchadat.RData'))
+load(file = here('data/vegdat.RData'))
 load(file = here('data/treedat.RData'))
 
 thm <- theme_minimal(base_size = 14) + 
@@ -40,65 +40,65 @@ zones <- c("Brazilian Pepper Berm", "Coastal Upland", "Immature Mangrove Fringe"
 Plot showing number of times a zone was identified across transects, dates.
 
 ```{r, fig.height = 5, fig.width = 7}
-zonecnt_plo(cchadat, thm)
+zonecnt_plo(vegdat, thm)
 ```
 
 Plot showing total distance zone was recorded across transect, dates.
 
 ```{r, fig.height = 5, fig.width = 7}
-zonedst_plo(cchadat, thm)
+zonedst_plo(vegdat, thm)
 ```
 
 An example showing zones for two sample dates at one site. 
 
 ```{r, fig.height = 3, fig.width = 12}
-sitezonedst_plo1(cchadat, site = site, thm)
+sitezonedst_plo1(vegdat, site = site, thm)
 ```
 
 To evaluate simple changes in zones over time, an estimate of total distance per zone between time points could be evaluated.  This is also very similar to the previous plot.
 
 ```{r, fig.height = 4, fig.width = 12}
-sitezonedst_plo2(cchadat, site, thm)
+sitezonedst_plo2(vegdat, site, thm)
 ```
 
 The same site, but showing species data along the transect.
 
 ```{r fig.height = 8, fig.width = 12}
-sitezonedst_plo3(cchadat, site, thm)
+sitezonedst_plo3(vegdat, site, thm)
 ```
 
 An evaluation of a single species across all sites, can be shown as frequency occurrence across the transect or mean percent basal cover. This example shows frequency occurrence of *Avicennia germinans*. 
 
 ```{r, fig.height = 4, fig.width = 12}
-sppsum_plo(cchadat, sp, typ = 'fo', thm)
+sppsum_plo(vegdat, sp, typ = 'fo', thm)
 ```
 
 And now average percent basal cover. 
 
 ```{r, fig.height = 4, fig.width = 12}
-sppsum_plo(cchadat, sp, typ = 'cover', thm)
+sppsum_plo(vegdat, sp, typ = 'cover', thm)
 ```
 
 A table of species frequency occurrence by zone, over time: 
 
 ```{r}
-sitezonesum_tab(cchadat, site = site)
+sitezonesum_tab(vegdat, site = site)
 ```
 
 Same thing but as percent basal cover.
 
 ```{r}
-sitezonesum_tab(cchadat, site = site, typ = 'cover')
+sitezonesum_tab(vegdat, site = site, typ = 'cover')
 ```
 
 A plot of sum of percent basal cover by arbitrary meter markings, top species, and across zones.
 
 ```{r, height = 8, width = 8}
-sitesum_plo(cchadat, site, delim = 10, top = 8)
+sitesum_plo(vegdat, site, delim = 10, top = 8)
 ```
 
 A plot of sum of percent basal cover by arbitrary meter markings, top species, and for select zones.
 
 ```{r, height = 8, width = 8}
-sitesum_plo(cchadat, site, delim = 10, top = 8, zone_name = c('Mangrove Fringe', 'Coastal Upland'))
+sitesum_plo(vegdat, site, delim = 10, top = 8, zone_name = c('Mangrove Fringe', 'Coastal Upland'))
 ```
