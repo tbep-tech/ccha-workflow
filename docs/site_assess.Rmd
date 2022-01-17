@@ -17,7 +17,7 @@ box::use(
   dplyr[...], 
   ggridges[...],
   reactable[...],
-  lubridate[ymd], 
+  lubridate[ymd, year], 
   stringr[str_wrap],
   forcats[fct_reorder2], 
   htmltools[h5], 
@@ -54,31 +54,31 @@ zonedst_plo(vegdat, thm)
 An example showing zones for two sample dates at one site. 
 
 ```{r, fig.height = 3, fig.width = 12}
-sitezonedst_plo1(vegdat, site = site, thm)
+sitezonedst_plo1(vegdat, site = site, zonefct = NULL, thm = thm)
 ```
 
 To evaluate simple changes in zones over time, an estimate of total distance per zone between time points could be evaluated.  This is also very similar to the previous plot.
 
 ```{r, fig.height = 4, fig.width = 12}
-sitezonedst_plo2(vegdat, site, thm)
+sitezonedst_plo2(vegdat, site = site, zonefct = NULL, thm = thm)
 ```
 
 The same site, but showing species data along the transect.
 
 ```{r fig.height = 8, fig.width = 12}
-sitezonedst_plo3(vegdat, site, thm)
+sitezonedst_plo3(vegdat, site, thm = thm)
 ```
 
 An evaluation of a single species across all sites, can be shown as frequency occurrence across the transect or mean percent basal cover. This example shows frequency occurrence of *Avicennia germinans*. 
 
 ```{r, fig.height = 4, fig.width = 12}
-sppsum_plo(vegdat, sp, var = 'fo', thm)
+sppsum_plo(vegdat, sp, var = 'fo', thm = thm)
 ```
 
 And now average percent basal cover. 
 
 ```{r, fig.height = 4, fig.width = 12}
-sppsum_plo(vegdat, sp, var = 'cover', thm)
+sppsum_plo(vegdat, sp, var = 'cover', thm = thm)
 ```
 
 A table of species frequency occurrence by zone, over time: 
