@@ -231,9 +231,12 @@ sitezonesum_fun <- function(vegdat, site, zonefct = NULL, var = c('fo', 'cover')
   dat <- vegdat %>% 
     filter(site %in% !!site) %>% 
     unite('zonefct', zone, zone_name, sep = ': ') %>% 
-    mutate(zonfect = factor(zonefct, levels = sort(unique(zonefct)))) %>%
-    filter(zonefct %in% !!zonefct)
+    mutate(zonfect = factor(zonefct, levels = sort(unique(zonefct)))) 
 
+  if(!is.null(zonefct))
+    dat <- dat %>% 
+      filter(zonefct %in% !!zonefct)
+  
   # get complete data by filling species as zero
   dat <- dat %>% 
     select(site, sample, meter, zonefct, species, pcent_basal_cover) %>%
@@ -465,8 +468,11 @@ sppsum_plo <- function(vegdat, sp, var = c('fo', 'cover'), sitefct = NULL, thm){
     mutate(
       sample = paste('Phase', sample),
       sample = factor(sample)
-    ) %>% 
-    filter(site %in% !!sitefct)
+    )
+    
+  if(!is.null(sitefct))
+    toplo <- toplo %>% 
+      filter(site %in% !!sitefct)
 
   cols <- function(n) {
     hues = seq(15, 375, length = n + 1)
