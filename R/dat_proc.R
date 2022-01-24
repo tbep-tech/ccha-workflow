@@ -42,6 +42,7 @@ vegdat <- vegraw %>%
       species == 'Salicornia virginicus' ~ 'Salicornia virginica', 
       species %in% c('Unknown 1', 'Unknown vine') ~ 'Unknown',
       species == 'Woody debris' ~ 'Woody Debris', 
+      species %in% c('Woody Debris', 'none/detritus') ~ 'Woody Debris, none/detritus',
       T ~ species
     ), 
     zone_name = case_when(
