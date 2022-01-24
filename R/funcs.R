@@ -298,10 +298,10 @@ sitezonesum_tab <- function(vegdat, site, zonefct = NULL, var = c('fo', 'cover')
     groupBy = c('zonefct'),
     columns = list(
       site = colDef(show = F),
-      zonefct = colDef(name = 'Zone', minWidth = 200),
-      species = colDef(name = 'Species', minWidth = 200)
+      zonefct = colDef(name = 'Zone'),
+      species = colDef(name = 'Species')
     ), 
-    defaultColDef = colDef(format = colFormat(digits = 1, percent = T)), 
+    defaultColDef = colDef(format = colFormat(digits = 1, percent = T), align = 'left'), 
     resizable = T, 
     defaultExpanded = T
     )
@@ -634,10 +634,10 @@ treesum_tab <- function(treedat, site, byspecies = T, zonefct = NULL,
         var = colDef(show = F),
         varlab = colDef(show = F),
         site = colDef(show = F),
-        zonefct = colDef(name = 'Zone', minWidth = 200),
-        species = colDef(name = 'Species', minWidth = 200)
+        zonefct = colDef(name = 'Zone'),
+        species = colDef(name = 'Species')
       ), 
-      defaultColDef = colDef(format = colFormat(digits = 1)), 
+      defaultColDef = colDef(format = colFormat(digits = 1), align = 'left'), 
       resizable = T, 
       defaultExpanded = T
     )
