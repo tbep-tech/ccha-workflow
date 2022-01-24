@@ -221,7 +221,7 @@ output$sitplo1 <- renderPlot(sitplo1())
 plotOutput('sitplo1')
 ```
 
-### Zone distance by phase
+### Zone length by phase
 
 ```{r}
 output$sitplo2 <- renderPlot(sitplo2())
