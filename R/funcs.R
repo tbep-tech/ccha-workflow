@@ -200,16 +200,15 @@ sitezonedst_plo3 <- function(vegdat, site, zonefct = NULL, thm){
   levs <- levels(toplo$zonefct)
   colin <- cols(length(levs))
   names(colin) <- levs
-  
+
   p <- ggplot(toplo, aes(x = meter, y = species, height = pcent_basal_cover / 100, fill = zonefct, color = zonefct)) + 
     geom_ridgeline(stat = 'identity') + 
     scale_x_continuous(expand = c(0, 0), breaks = seq(0, max(toplo$meter), by = 20)) + 
     scale_y_discrete(limits = rev) +
     scale_fill_manual(values = colin, limits = force) +
     scale_color_manual(values = colin, limits = force) +
-
     thm + 
-    # theme(panel.grid.major.y = element_blank()) + 
+    theme(axis.text.y = element_text(vjust = 0)) +
     labs(
       x = 'Meters', 
       color = 'Zone', 
@@ -321,8 +320,16 @@ sitesum_fun <- function(vegdat, site, delim, top, var = c('fo', 'cover'), zonefc
     mutate(zonfect = factor(zonefct, levels = sort(unique(zonefct)))) %>% 
     select(site, sample, meter, zonefct, species, pcent_basal_cover) %>%
     tidyr::complete(species, tidyr::nesting(site, sample, zonefct, meter), fill = list(pcent_basal_cover = 0)) %>% 
-    filter(!species %in% torm) %>% 
-    mutate(species = factor(species))
+    filter(!species %in% torm) 
+  
+  # make uniform levels for open water, unknown, woody debris, none/detritus
+  notspp <- c('Open Water', 'Unknown', 'Woody Debris, none/detritus')
+  spp <- unique(dat$species) %>% 
+    sort %>% 
+    .[!. %in% notspp]
+  spp <- c(spp, notspp)
+  dat <- dat %>% 
+    mutate(species = factor(species, levels = spp))
 
   delims <- unique(dat$meter) %>% 
     as.numeric %>% 
