@@ -178,7 +178,7 @@ allplo1 <- reactive({
 })
 ```
 
-1 ZONES BY SITE
+1 ZONES BY SITE {data-navmenu="PAGE SELECTION"}
 =======================================================================
   
 Column {data-width=200 .tabset .tabset-fade}
@@ -228,7 +228,7 @@ output$sitplo2 <- renderPlot(sitplo2())
 plotOutput('sitplo2')
 ```
 
-2 VEGETATION SURVEYS
+2 VEGETATION SURVEYS {data-navmenu="PAGE SELECTION"}
 =======================================================================
   
 Column {data-width=200 .tabset .tabset-fade}
@@ -294,7 +294,7 @@ output$vegplo2 <- renderPlot(vegplo2())
 plotOutput('vegplo2')
 ```
 
-3 TREE SURVEYS
+3 TREE SURVEYS {data-navmenu="PAGE SELECTION"}
 =======================================================================
   
 Column {data-width=200 .tabset .tabset-fade}
@@ -358,7 +358,7 @@ output$treeplo1 <- renderPlot(treeplo1())
 plotOutput('treeplo1')
 ```
 
-4 BETWEEN SITE COMPARISONS
+4 BETWEEN SITE COMPARISONS {data-navmenu="PAGE SELECTION"}
 =======================================================================
   
 Column {data-width=200 .tabset .tabset-fade}
