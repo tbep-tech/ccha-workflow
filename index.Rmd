@@ -267,11 +267,11 @@ column(12,
 Column {.tabset .tabset-fade data-width=700}
 -----------------------------------------------------------------------
 
-### Tabular summary
+### All species
 
 ```{r}
-output$vegtab1 <- renderReactable(vegtab1())
-reactableOutput('vegtab1')
+output$vegplo2 <- renderPlot(vegplo2())
+plotOutput('vegplo2')
 ```
 
 ### Species summary
@@ -287,11 +287,11 @@ fillCol(flex = c(NA, 1),
 )
 ```
 
-### All species
+### Tabular summary
 
 ```{r}
-output$vegplo2 <- renderPlot(vegplo2())
-plotOutput('vegplo2')
+output$vegtab1 <- renderReactable(vegtab1())
+reactableOutput('vegtab1')
 ```
 
 3 TREE SURVEYS {data-navmenu="PAGE SELECTION"}
