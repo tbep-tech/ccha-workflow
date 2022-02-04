@@ -79,7 +79,7 @@ sitezonedst_plo1 <- function(vegdat, site, zonefct = NULL, thm){
     unite('zonefct', zone, zone_name, sep = ': ') %>%
     unite('sample', sample, date, sep = ': ') %>% 
     mutate(
-      sample = paste('Phase:', sample),
+      sample = paste('Year:', sample),
       sample = factor(sample, levels = rev(unique(sample))),
       zonefct = factor(zonefct, levels = sort(unique(zonefct)))
     ) 
@@ -129,7 +129,7 @@ sitezonedst_plo2 <- function(vegdat, site, zonefct = NULL, thm){
     unite('zonefct', zone, zone_name, sep = ': ') %>%
     unite('sample', sample, date, sep = ': ') %>% 
     mutate(
-      sample = paste('Phase:', sample),
+      sample = paste('Year:', sample),
       sample = factor(sample, levels = unique(sample)),
       zonefct = factor(zonefct, levels = sort(unique(zonefct)))
     ) %>% 
@@ -182,7 +182,7 @@ sitezonedst_plo3 <- function(vegdat, site, zonefct = NULL, thm){
     unique %>% 
     unite('zonefct', zone, zone_name, sep = ': ') %>% 
     mutate(
-      sample = paste('Phase:', sample),
+      sample = paste('Year:', sample),
       sample = factor(sample, levels = unique(sample)),
       zonefct = factor(zonefct, levels = sort(unique(zonefct)))
     )
@@ -287,7 +287,7 @@ sitezonesum_tab <- function(vegdat, site, zonefct = NULL, var = c('fo', 'cover')
 
   totab <- totab %>% 
     mutate(
-      sample = paste('Phase', sample)
+      sample = paste('Year', sample)
     ) %>% 
     pivot_wider(names_from = 'sample', values_from = 'yval', values_fill = NA) %>%
     arrange(zonefct, species) 
@@ -391,7 +391,7 @@ sitesum_plo <- function(vegdat, site, delim, top, var = c('fo', 'cover'), zonefc
   
   toplo <- sitesum_fun(vegdat, site, delim, top, var, zonefct) %>% 
     mutate(
-      sample = paste0('Phase ', sample)
+      sample = paste0('Year ', sample)
     )
   
   cols <- RColorBrewer::brewer.pal(9, 'Set1') %>% 
@@ -473,7 +473,7 @@ sppsum_plo <- function(vegdat, sp, var = c('fo', 'cover'), sitefct = NULL, thm){
   
   toplo <- toplo %>% 
     mutate(
-      sample = paste('Phase', sample),
+      sample = paste('Year', sample),
       sample = factor(sample)
     )
     
@@ -628,7 +628,7 @@ treesum_tab <- function(treedat, site, byspecies = T, zonefct = NULL,
   
   totab <- treesum_fun(treedat, site = site, byspecies = byspecies, zonefct = zonefct, var = var) %>% 
     mutate(
-      sample = paste('Phase', sample)
+      sample = paste('Year', sample)
     ) %>% 
     pivot_wider(names_from = 'sample', values_from = 'val', values_fill = NA) %>%
     arrange(zonefct) 
@@ -676,7 +676,7 @@ treesum_plo <- function(treedat, site, byspecies, zonefct = NULL, var, thm){
   
   toplo <- treesum_fun(treedat, site, byspecies, zonefct, var) %>% 
     mutate(
-      sample = paste('Phase', sample)
+      sample = paste('Year', sample)
     )
   
   cols <- RColorBrewer::brewer.pal(8, 'Accent') %>% 

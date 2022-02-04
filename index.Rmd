@@ -48,7 +48,7 @@ sppopt <- unique(vegdat$species) %>%
 ```
 
 ```{r reactives}
-# phase by site/zone
+# year by site/zone
 sitplo1 <- reactive({
   
   # input
@@ -63,7 +63,7 @@ sitplo1 <- reactive({
   
 })
 
-# distance by phase/site
+# distance by year/site
 sitplo2 <- reactive({
   
   # input
@@ -214,14 +214,14 @@ column(12,
 Column {.tabset .tabset-fade data-width=700}
 -----------------------------------------------------------------------
 
-### Zones by phase
+### Zones by year
 
 ```{r}
 output$sitplo1 <- renderPlot(sitplo1())
 plotOutput('sitplo1')
 ```
 
-### Zone length by phase
+### Zone length by year
 
 ```{r}
 output$sitplo2 <- renderPlot(sitplo2())
