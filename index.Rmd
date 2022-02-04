@@ -103,10 +103,12 @@ vegplo1 <- reactive({
   varsel1 <- input$varsel1
   topsel <- input$topsel
   metsel <- input$metsel
+  dlmtyp <- input$dlmtyp
 
   req(zonsel2)
+  req(metsel)
   
-  out <- sitesum_plo(vegdat, sitsel2, delim = metsel, top = topsel, var = varsel1, zonefct = zonsel2, thm = thm)
+  out <- sitesum_plo(vegdat, sitsel2, delim = metsel, delimtyp = dlmtyp, top = topsel, var = varsel1, zonefct = zonsel2, thm = thm)
   
   return(out)
   
@@ -280,9 +282,36 @@ plotOutput('vegplo2')
 output$vegplo1 <- renderPlot(vegplo1())
 fillCol(flex = c(NA, 1),
   column(12, 
-    column(6, sliderInput('topsel', 'Select number of species:', min = 1, max = 30, step = 1, value = 10, width = '100%')),
-    column(6, sliderInput('metsel', 'Select number of meter bins:', min  = 1, max = 30, step = 1, value = 10, width = '100%'))
-  ),
+    column(4, sliderInput('topsel', 'Select number of species:', min = 1, max = 30, step = 1, value = 10, width = '100%')),
+    column(4, selectInput('dlmtyp', 'Select bins by:', choices = c('Number', 'Distance'), width = '100%')), 
+    column(4, 
+      renderUI({
+        
+        # input
+        dlmtyp <- input$dlmtyp
+        sitsel2 <- input$sitsel2
+        
+        if(dlmtyp == 'Distance'){
+          maxv <- vegdat %>% 
+            filter(site %in% !!sitsel2) %>% 
+            pull(meter) %>% 
+            max(na.rm = T) %>% 
+            round(0)
+          minv <- 3
+          ttl <- 'Select length of meter bins:'
+        }
+        
+        if(dlmtyp == 'Number'){
+          minv <- 1
+          maxv <- 30
+          ttl <- 'Select number of meter bins:'
+        }
+          
+        sliderInput('metsel', ttl, min = minv, max = maxv, step = 1, value = 10, width = '100%')
+             
+      })
+    )
+  ),  
   plotOutput('vegplo1')
 )
 ```

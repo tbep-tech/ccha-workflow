@@ -310,8 +310,9 @@ sitezonesum_tab <- function(vegdat, site, zonefct = NULL, var = c('fo', 'cover')
 }
 
 #' summarize species at a site, across zones, used for tabular or graphical summary
-sitesum_fun <- function(vegdat, site, delim, top, var = c('fo', 'cover'), zonefct = NULL, torm = NULL){#c('none/detritus', 'Open Water', 'Boardwalk')){
+sitesum_fun <- function(vegdat, site, delim, delimtyp = c('Number', 'Distance'), top, var = c('fo', 'cover'), zonefct = NULL, torm = NULL){#c('none/detritus', 'Open Water', 'Boardwalk')){
   
+  delimtyp <- match.arg(delimtyp)
   var <- match.arg(var)
   
   dat <- vegdat %>% 
@@ -331,14 +332,28 @@ sitesum_fun <- function(vegdat, site, delim, top, var = c('fo', 'cover'), zonefc
   dat <- dat %>% 
     mutate(species = factor(species, levels = spp))
 
+  # get breaks and labels for meter cuts
   delims <- unique(dat$meter) %>% 
     as.numeric %>% 
-    range %>% 
-    {seq(.[1], .[2], length.out = delim + 1)}
+    range
   
-  maxdelim <- round(max(delims), 0)
-  lbs <- round(delims, 0)[-length(delims)]
-  lbs <- paste(lbs, c(lbs[-1], maxdelim), sep = '-')
+  maxdelim <- max(dat$meter)
+  if(delimtyp == 'Number'){ 
+    delims <- seq(delims[1], delims[2], length.out = delim + 1)
+    lbs <- round(delims, 0)[-length(delims)]
+    lbs <- paste(lbs, c(lbs[-1], round(maxdelim, 0)), sep = '-')
+  }
+  
+  # this is junk because there's usually a remainder
+  if(delimtyp == 'Distance'){
+    delims <- seq(delims[1], delims[2], by = delim) %>% 
+      c(maxdelim) %>% 
+      unique
+    browser()
+    lbs <- round(delims, 0)
+    lbs <- lbs[-length(lbs)]
+    lbs <- paste(lbs, c(lbs[-1], round(maxdelim, 0)), sep = '-')
+  }
 
   # filter by zones
   if(!is.null(zonefct))
@@ -387,11 +402,11 @@ sitesum_fun <- function(vegdat, site, delim, top, var = c('fo', 'cover'), zonefc
 }
 
 # plot results for sitesum_fun
-sitesum_plo <- function(vegdat, site, delim, top, var = c('fo', 'cover'), zonefct = NULL, thm){
+sitesum_plo <- function(vegdat, site, delim, delimtyp, top, var = c('fo', 'cover'), zonefct = NULL, thm){
   
   var <- match.arg(var)
   
-  toplo <- sitesum_fun(vegdat, site, delim, top, var, zonefct) %>% 
+  toplo <- sitesum_fun(vegdat, site, delim, delimtyp, top, var, zonefct) %>% 
     mutate(
       sample = paste0('Year ', sample)
     )
