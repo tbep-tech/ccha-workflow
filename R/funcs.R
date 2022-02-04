@@ -336,8 +336,10 @@ sitesum_fun <- function(vegdat, site, delim, top, var = c('fo', 'cover'), zonefc
     range %>% 
     {seq(.[1], .[2], length.out = delim + 1)}
   
+  maxdelim <- round(max(delims), 0)
   lbs <- round(delims, 0)[-length(delims)]
-  
+  lbs <- paste(lbs, c(lbs[-1], maxdelim), sep = '-')
+
   # filter by zones
   if(!is.null(zonefct))
     dat <- dat %>%
@@ -414,7 +416,10 @@ sitesum_plo <- function(vegdat, site, delim, top, var = c('fo', 'cover'), zonefc
     scale_x_discrete(drop = F) +
     scale_fill_manual(values = colin, limits = force) +
     facet_wrap(~sample, ncol = 1, drop = F) + 
-    thm + 
+    thm +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1)
+    ) +
     labs(
       y = ylab, 
       x = 'Meter distance', 
