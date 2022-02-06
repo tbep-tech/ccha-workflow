@@ -310,7 +310,7 @@ sitezonesum_tab <- function(vegdat, site, zonefct = NULL, var = c('fo', 'cover')
 }
 
 #' summarize species at a site, across zones, used for tabular or graphical summary
-sitesum_fun <- function(vegdat, site, delim, delimtyp = c('Number', 'Distance'), top, var = c('fo', 'cover'), zonefct = NULL, torm = NULL){#c('none/detritus', 'Open Water', 'Boardwalk')){
+sitesum_fun <- function(vegdat, site, delim, delimtyp = c('Number', 'Distance'), vegsel, var = c('fo', 'cover'), zonefct = NULL, torm = NULL){
   
   delimtyp <- match.arg(delimtyp)
   var <- match.arg(var)
@@ -349,7 +349,7 @@ sitesum_fun <- function(vegdat, site, delim, delimtyp = c('Number', 'Distance'),
     delims <- seq(delims[1], delims[2], by = delim) %>% 
       c(maxdelim) %>% 
       unique
-    browser()
+    
     lbs <- round(delims, 0)
     lbs <- lbs[-length(lbs)]
     lbs <- paste(lbs, c(lbs[-1], round(maxdelim, 0)), sep = '-')
@@ -387,26 +387,29 @@ sitesum_fun <- function(vegdat, site, delim, delimtyp = c('Number', 'Distance'),
       ) %>% 
       filter(yval > 0)
 
-  maxout <- sums %>% 
-    group_by(species) %>% 
-    summarise(yval = sum(yval)) %>% 
-    arrange(-yval) %>% 
-    pull(species) %>% 
-    .[1:top]
-  
+  # get selection to filter summaries by actual species list or count
+  sppflt <- vegsel
+  if(is.numeric(vegsel))
+    sppflt <- sums %>% 
+      group_by(species) %>% 
+      summarise(yval = sum(yval)) %>% 
+      arrange(-yval) %>% 
+      pull(species) %>% 
+      .[1:vegsel]
+    
   out <- sums %>% 
-    filter(species %in% maxout)
+    filter(species %in% sppflt)
   
   return(out)
 
 }
 
 # plot results for sitesum_fun
-sitesum_plo <- function(vegdat, site, delim, delimtyp, top, var = c('fo', 'cover'), zonefct = NULL, thm){
+sitesum_plo <- function(vegdat, site, delim, delimtyp, vegsel, var = c('fo', 'cover'), zonefct = NULL, thm){
   
   var <- match.arg(var)
   
-  toplo <- sitesum_fun(vegdat, site, delim, delimtyp, top, var, zonefct) %>% 
+  toplo <- sitesum_fun(vegdat, site, delim, delimtyp, vegsel, var, zonefct) %>% 
     mutate(
       sample = paste0('Year ', sample)
     )
@@ -414,8 +417,11 @@ sitesum_plo <- function(vegdat, site, delim, delimtyp, top, var = c('fo', 'cover
   cols <- RColorBrewer::brewer.pal(9, 'Set1') %>% 
     colorRampPalette(.)
 
-  top <- min(c(top, length(unique(toplo$species))))
-  leglab <- paste('Top', top, 'species')
+  leglab <- 'Selected species'
+  if(is.numeric(vegsel)){
+    vegsel <- min(c(vegsel, length(unique(toplo$species))))
+    leglab <- paste('Top', vegsel, 'species')
+  }
   
   levs <- levels(toplo$species)
   colin <- cols(length(levs))

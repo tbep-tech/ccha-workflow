@@ -165,14 +165,15 @@ vegplo2 <- reactive({
   sitsel2 <- input$sitsel2
   zonsel2 <- input$zonsel2
   varsel1 <- input$varsel1
-  topsel <- input$topsel
+  vegsel <- input$vegsel
   metsel <- input$metsel
   dlmtyp <- input$dlmtyp
 
   req(zonsel2)
   req(metsel)
+  req(vegsel)
   
-  out <- sitesum_plo(vegdat, sitsel2, delim = metsel, delimtyp = dlmtyp, top = topsel, var = varsel1, zonefct = zonsel2, thm = thm)
+  out <- sitesum_plo(vegdat, sitsel2, delim = metsel, delimtyp = dlmtyp, vegsel = vegsel, var = varsel1, zonefct = zonsel2, thm = thm)
   
   return(out)
   
@@ -338,9 +339,38 @@ plotOutput('vegplo1')
 output$vegplo2 <- renderPlotly(vegplo2())
 fillCol(flex = c(NA, 1),
   column(12, 
-    column(4, sliderInput('topsel', 'Select number of species:', min = 1, max = 30, step = 1, value = 10, width = '100%')),
-    column(4, selectInput('dlmtyp', 'Select bins by:', choices = c('Number', 'Distance'), width = '100%')), 
-    column(4, 
+    column(3, selectInput('spptyp', 'Select species by:', choices = c('Top n', 'Names'), width = '100%')), 
+    column(3, 
+      renderUI({
+        
+        # inputs
+        spptyp <- input$spptyp
+        sitsel2 <- input$sitsel2
+        
+        if(spptyp == 'Names'){
+         
+           tosel <- vegdat %>% 
+             filter(site %in% sitsel2) %>%  
+             pull(species) %>% 
+             unique %>% 
+             sort
+           
+           sel <- tosel[1:min(length(tosel), 10)]
+  
+           out <- pickerInput('vegsel', 'Select species to show:', choices = tosel, selected = sel, multiple = T, 
+                              options = list(`actions-box` = TRUE))
+           
+        }
+        
+        if(spptyp == 'Top n')
+          out <- sliderInput('vegsel', 'Select number of species:', min = 1, max = 30, step = 1, value = 10, width = '100%')
+      
+        return(out)
+        
+      })     
+    ),
+    column(3, selectInput('dlmtyp', 'Select bins by:', choices = c('Number', 'Distance'), width = '100%')), 
+    column(3, 
       renderUI({
         
         # input
