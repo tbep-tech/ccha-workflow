@@ -110,19 +110,11 @@ tranloc <- st_read(here('data/raw/All_CCHA_Transects.shp')) %>%
       Name == 'Archie Mosaic (N)' ~ 'Mosaic', 
       Name == 'TECO Big Bend (N)' ~ 'Big Bend - TECO',
       Name == 'Upper Tampa Bay Park (N)' ~ 'Upper Tampa Bay Park', 
+      Name == 'Feather Sound (R)' ~ 'Weedon Island',
       T ~ NA_character_
     )
   ) %>% 
   filter(!is.na(site)) %>% 
   select(site)
-
-# trancnt <- st_centroid(tranloc) %>% 
-#   mutate(
-#     lng = st_coordinates(.)[, 1], 
-#     lat = st_coordinates(.)[, 2]
-#   ) %>% 
-#   st_set_geometry(NULL)
-
-# tranloc <- left_join(tranloc, trancnt, by = 'site')
 
 save(tranloc, file = here('data/tranloc.RData'))
