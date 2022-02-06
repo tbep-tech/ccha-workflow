@@ -5,6 +5,7 @@ box::use(
   tidyr[...],
   here[...],
   lubridate[...],
+  sf[...],
   googlesheets4[read_sheet,gs4_deauth],
   googledrive[drive_deauth]
 )
@@ -65,19 +66,6 @@ vegdat <- vegraw %>%
 
 save(vegdat, file = here('data/vegdat.RData'))
 
-# cchaloc <- read_sheet(id, sheet = 'ZoneData') %>% 
-#   select(
-#     site = Site, 
-#     lng = longitude, 
-#     lat = latitude
-#     ) %>% 
-#   group_by(site) %>% 
-#   summarise(
-#     lng = mean(lng), 
-#     lat = mean(lat), 
-#     .groups = 'drop'
-#   )
-
 # get tree data -----------------------------------------------------------
 
 # data here https://docs.google.com/spreadsheets/d/1gvIqr6aPD_-hKKi7ZQvLcBL_h3jg7XIbhYEEVWWbFzU/edit#gid=1492814788
@@ -108,3 +96,33 @@ treedat <- treeraw %>%
 
 save(treedat, file = here('data/treedat.RData'))
 
+# transect locations ------------------------------------------------------
+
+tranloc <- st_read(here('data/raw/All_CCHA_Transects.shp')) %>% 
+  st_make_valid() %>% 
+  mutate(
+    site = case_when(
+      Name == 'Cockroach Bay (R)' ~ 'Cockroach Bay',
+      Name == 'Ft. DeSoto (R)' ~ 'Fort DeSoto',
+      Name == 'Harbor Palms (R)' ~ 'Harbor Palms', 
+      Name == 'Hidden Harbor (N)' ~ 'Hidden Harbor', 
+      Name == 'Little Manatee River (N)' ~ 'Little Manatee River',
+      Name == 'Archie Mosaic (N)' ~ 'Mosaic', 
+      Name == 'TECO Big Bend (N)' ~ 'Big Bend - TECO',
+      Name == 'Upper Tampa Bay Park (N)' ~ 'Upper Tampa Bay Park', 
+      T ~ NA_character_
+    )
+  ) %>% 
+  filter(!is.na(site)) %>% 
+  select(site)
+
+# trancnt <- st_centroid(tranloc) %>% 
+#   mutate(
+#     lng = st_coordinates(.)[, 1], 
+#     lat = st_coordinates(.)[, 2]
+#   ) %>% 
+#   st_set_geometry(NULL)
+
+# tranloc <- left_join(tranloc, trancnt, by = 'site')
+
+save(tranloc, file = here('data/tranloc.RData'))

@@ -26,11 +26,15 @@ library(htmltools)
 library(htmlwidgets)
 library(shinyWidgets)
 library(plotly)
+library(mapview)
+library(leaflet)
+library(leafem)
 
 source(here('R/funcs.R'))
 
 load(file = here('data/vegdat.RData'))
 load(file = here('data/treedat.RData'))
+load(file = here('data/tranloc.RData'))
 
 thm <- theme_minimal(base_size = 16) + 
   theme(
@@ -46,9 +50,53 @@ sppopt <- unique(vegdat$species) %>%
 # # style file
 # styles <- readLines('https://raw.githubusercontent.com/tbep-tech/css-styling/master/styles.css')
 # writeLines(styles, 'styles.css')
+
+bsmap <- mapview(tranloc, homebutton = F, legend = F, layer.name = 'Transects', alpha = 0) %>%
+  .@map %>%
+  addPolylines(
+    data = tranloc,
+    stroke = T,
+    color = 'blue',
+    fillColor = "blue",
+    fill = T,
+    weight = 30,
+    opacity = 0.5,
+    fillOpacity = 0.5
+  ) %>%
+  addStaticLabels(
+    data = tranloc,
+    label = tranloc$site,
+    direction = 'top', 
+    textsize = '15px',
+    offset = c(0, 1)
+  )
 ```
 
 ```{r reactives}
+# map site selection
+bsmap1 <- leafletProxy('bsmap1')
+observeEvent(input$sitsel1, {
+  # input
+  sitsel1 <- input$sitsel1
+  
+  toadd <- tranloc %>% 
+    filter(site %in% sitsel1)
+  bsmap1 <- bsmap1 %>%
+    removeShape(layerId = 'sitsel') %>% 
+    addPolylines(
+      data = toadd,
+      layerId = 'sitsel',
+      stroke = T,
+      color = 'red',
+      fillColor = 'red',
+      fill = T,
+      weight = 30,
+      opacity = 0.8,
+      fillOpacity = 0.8
+    ) 
+  
+})
+
 # year by site/zone
 sitplo1 <- reactive({
   
@@ -216,6 +264,13 @@ column(12,
 
 Column {.tabset .tabset-fade data-width=700}
 -----------------------------------------------------------------------
+
+### Site Map
+
+```{r}
+output$bsmap1 <- renderLeaflet(bsmap)
+leafletOutput('bsmap1')
+```
 
 ### Zones by year
 
