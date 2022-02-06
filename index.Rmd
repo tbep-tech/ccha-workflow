@@ -444,7 +444,8 @@ column(12,
       'Absolute species density (trees/ha)'= 'trees_ha', 
       'Species average basal area (cm2/m2)' =  'cm2_m2',
       'Species absolute cover (m2/ha)' = 'm2_ha', 
-      'Relative cover (%)' = 'relcov_per'
+      'Relative cover (%)' = 'relcov_per', 
+      'Tree height (m)' = 'tree_height'
     ),
     width = '100%'
   )

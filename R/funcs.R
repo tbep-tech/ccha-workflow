@@ -540,10 +540,10 @@ sppsum_plo <- function(vegdat, sp, var = c('fo', 'cover'), sitefct = NULL, thm){
 
 #' summarise tree plot data into species by zone or just by zone
 treesum_fun <- function(treedat, site, byspecies = T, zonefct = NULL,
-                        var = c("cm2_m2", "m2_ha", "relcov_per", "trees_ha", "trees_m2", "rich")){
+                        var = c("cm2_m2", "m2_ha", "relcov_per", "trees_ha", "trees_m2", "rich", "tree_height")){
   
   var <- match.arg(var)
-  
+
   if(byspecies & var == 'rich')
     stop('Cannot use var = "rich" with byspecies = "TRUE"')
   
@@ -558,6 +558,35 @@ treesum_fun <- function(treedat, site, byspecies = T, zonefct = NULL,
   if(!is.null(zonefct))
     dat <- dat %>% 
       filter(zonefct %in% !!zonefct)
+  
+  # handle tree height different since it's already present
+  if(var == 'tree_height'){
+    
+    if(byspecies)
+      dat <- dat %>% 
+        group_by(site, sample, zonefct, species) %>%
+        summarize(
+          val = mean(tree_height, na.rm = T),
+          .groups = 'drop'
+        )
+        
+    if(!byspecies)
+      dat <- dat %>% 
+        group_by(site, sample, zonefct) %>%
+        summarize(
+          val = mean(tree_height, na.rm = T),
+          .groups = 'drop'
+        ) 
+        
+     out <- dat %>% 
+       mutate(
+         var = 'tree_height',
+         varlab = 'Tree height (m)'
+       )
+     
+     return(out)
+     
+  }
   
   # summarize by plot in each zone first, then density of trees in the zone
   # this is used to get species densities in each zone
@@ -643,14 +672,14 @@ treesum_fun <- function(treedat, site, byspecies = T, zonefct = NULL,
   
   out <- out %>% 
     filter(var %in% !!var)
-  
+
   return(out)
   
 }
 
 #' tree site summary table
 treesum_tab <- function(treedat, site, byspecies = T, zonefct = NULL,
-                        var = c("cm2_m2", "m2_ha", "relcov_per", "trees_ha", "trees_m2", "rich")){
+                        var = c("cm2_m2", "m2_ha", "relcov_per", "trees_ha", "trees_m2", "rich", "tree_height")){
   
   totab <- treesum_fun(treedat, site = site, byspecies = byspecies, zonefct = zonefct, var = var) %>% 
     mutate(
