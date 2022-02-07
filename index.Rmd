@@ -59,7 +59,7 @@ bsmap <- mapview(tranloc, homebutton = F, legend = F, layer.name = 'Transects', 
     color = 'blue',
     fillColor = "blue",
     fill = T,
-    weight = 30,
+    weight = 20,
     opacity = 0.5,
     fillOpacity = 0.5
   ) %>%
@@ -90,7 +90,7 @@ observeEvent(input$sitsel1, {
       color = 'red',
       fillColor = 'red',
       fill = T,
-      weight = 30,
+      weight = 20,
       opacity = 0.8,
       fillOpacity = 0.8
     ) 
