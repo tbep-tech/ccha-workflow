@@ -59,7 +59,8 @@ vegdat <- vegraw %>%
       pcent_basal_cover > 100 ~ NA_real_, 
       pcent_basal_cover < 0 ~ NA_real_, 
       T ~ pcent_basal_cover
-    )
+    ), 
+    zone = toupper(zone)
   ) %>% 
   filter(!is.na(site)) %>% 
   arrange(site, sample, meter)
