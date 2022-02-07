@@ -798,7 +798,7 @@ treesum_tab <- function(treedat, site, byspecies = T, zonefct = NULL,
 }
 
 #' tree site summary plot
-treesum_plo <- function(treedat, site, byspecies, zonefct = NULL, tresel = NULL, var, thm){
+treesum_plo <- function(treedat, site, byspecies, zonefct = NULL, tresel = NULL, var, dodge = T, thm){
   
   toplo <- treesum_fun(treedat, site, byspecies, zonefct, tresel, var) %>% 
     mutate(
@@ -814,9 +814,14 @@ treesum_plo <- function(treedat, site, byspecies, zonefct = NULL, tresel = NULL,
   
   leglab <- unique(toplo$varlab)
   
-  if(byspecies)
-    p <- ggplot(toplo, aes(x = zonefct, y = val, fill = species)) + 
-      geom_bar(stat = 'identity', color = 'black') + 
+  if(byspecies){
+    
+    pos <- 'stack'
+    if(dodge)
+      pos <- position_dodge2(width = 0.9, preserve = "single")
+    
+    p <- ggplot(toplo, aes(x = zonefct, y = val, fill = species)) +   
+      geom_col(stat = 'identity', color = 'black', position = pos) +
       scale_x_discrete(drop = F, labels = function(x) str_wrap(x, width = 10)) +
       scale_fill_manual(values = colin, limits = force) +
       facet_wrap(~sample, ncol = 1, drop = F) + 
@@ -826,6 +831,8 @@ treesum_plo <- function(treedat, site, byspecies, zonefct = NULL, tresel = NULL,
         x = NULL, 
         fill = 'Species'
       )
+
+  }
   
   if(!byspecies)
     p <- ggplot(toplo, aes(x = zonefct, y = val)) + 

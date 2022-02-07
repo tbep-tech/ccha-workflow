@@ -204,12 +204,13 @@ treeplo1 <- reactive({
   zonsel3 <- input$zonsel3
   varsel2 <- input$varsel2
   aggsel <- input$aggsel
+  dgesel <- input$dgesel
   tresel <- input$tresel
   
   req(zonsel3)
   req(tresel)
   
-  out <- treesum_plo(treedat, sitsel3, byspecies = aggsel, zonefct = zonsel3, tresel = tresel, var = varsel2, thm = thm)
+  out <- treesum_plo(treedat, sitsel3, byspecies = aggsel, zonefct = zonsel3, tresel = tresel, var = varsel2, dodge = dgesel, thm = thm)
   
   return(out)
   
@@ -454,6 +455,9 @@ column(12,
 )
 column(12, 
   materialSwitch(inputId = 'aggsel', label = 'Show results by species?', value = T, width = '100%')
+)
+column(12, 
+  materialSwitch(inputId = 'dgesel', label = 'Separate columns by species?', value = T, width = '100%')
 )
 ```
 
