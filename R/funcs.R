@@ -573,7 +573,7 @@ sppsum_plo <- function(vegdat, sp, var = c('fo', 'cover'), sitefct = NULL, thm){
 }
 
 #' summarise tree plot data into species by zone or just by zone
-treesum_fun <- function(treedat, site, byspecies = T, zonefct = NULL,
+treesum_fun <- function(treedat, site, byspecies = T, zonefct = NULL, tresel = NULL,
                         var = c("cm2_m2", "m2_ha", "relcov_per", "trees_ha", "trees_m2", "rich", "tree_height")){
   
   var <- match.arg(var)
@@ -596,19 +596,37 @@ treesum_fun <- function(treedat, site, byspecies = T, zonefct = NULL,
   # handle tree height different since it's already present
   if(var == 'tree_height'){
     
-    if(byspecies)
+    dat <- dat %>% 
+      group_by(site, sample, zonefct, species) %>%
+      summarize(
+        val = mean(tree_height, na.rm = T),
+        .groups = 'drop'
+      )    
+      
+    # get selection to filter summaries by actual species list or count
+    if(!is.null(tresel)){
+      
+      sppflt <- tresel
+      
+      if(is.numeric(tresel))
+        sppflt <- dat %>% 
+          group_by(species) %>% 
+          filter(var %in% !!var) %>% 
+          summarise(val = sum(val)) %>% 
+          arrange(-val) %>% 
+          pull(species) %>% 
+          .[1:tresel]
+      
       dat <- dat %>% 
-        group_by(site, sample, zonefct, species) %>%
-        summarize(
-          val = mean(tree_height, na.rm = T),
-          .groups = 'drop'
-        )
-        
+        filter(species %in% sppflt)
+      
+    }
+    
     if(!byspecies)
       dat <- dat %>% 
         group_by(site, sample, zonefct) %>%
         summarize(
-          val = mean(tree_height, na.rm = T),
+          val = mean(val, na.rm = T),
           .groups = 'drop'
         ) 
         
@@ -679,6 +697,25 @@ treesum_fun <- function(treedat, site, byspecies = T, zonefct = NULL,
   
   out <- zonesppsum
   
+  # get selection to filter summaries by actual species list or count
+  if(!is.null(tresel)){
+    
+    sppflt <- tresel
+
+    if(is.numeric(tresel))
+      sppflt <- out %>% 
+        group_by(species) %>% 
+        filter(var %in% !!var) %>% 
+        summarise(val = sum(val)) %>% 
+        arrange(-val) %>% 
+        pull(species) %>% 
+        .[1:tresel]
+    
+    out <- out %>% 
+      filter(species %in% sppflt)
+    
+  }
+  
   # summarise the above across zone
   if(!byspecies){
 
@@ -703,7 +740,7 @@ treesum_fun <- function(treedat, site, byspecies = T, zonefct = NULL,
       arrange(site, sample, zonefct)
     
   }
-  
+ 
   out <- out %>% 
     filter(var %in% !!var)
 
@@ -761,9 +798,9 @@ treesum_tab <- function(treedat, site, byspecies = T, zonefct = NULL,
 }
 
 #' tree site summary plot
-treesum_plo <- function(treedat, site, byspecies, zonefct = NULL, var, thm){
+treesum_plo <- function(treedat, site, byspecies, zonefct = NULL, tresel = NULL, var, thm){
   
-  toplo <- treesum_fun(treedat, site, byspecies, zonefct, var) %>% 
+  toplo <- treesum_fun(treedat, site, byspecies, zonefct, tresel, var) %>% 
     mutate(
       sample = paste('Year', sample)
     )
