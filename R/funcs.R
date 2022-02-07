@@ -114,6 +114,14 @@ sitezonedst_plo1 <- function(vegdat, site, zonefct = NULL, thm){
       color = 'Zone name'
     )
   
+  p <- ggplotly(p) %>% 
+    plotly::config(
+      toImageButtonOptions = list(
+        format = "svg",
+        filename = "myplot"
+      )
+    )
+  
   return(p)
 
 }
@@ -164,6 +172,14 @@ sitezonedst_plo2 <- function(vegdat, site, zonefct = NULL, thm){
       fill = 'Zone', 
       y = 'Meters',
       subtitle = paste0('Site: ', site)
+    )
+  
+  p <- ggplotly(p) %>% 
+    plotly::config(
+      toImageButtonOptions = list(
+        format = "svg",
+        filename = "myplot"
+      )
     )
   
   return(p)
@@ -250,9 +266,11 @@ sitezonesum_fun <- function(vegdat, site, zonefct = NULL, var = c('fo', 'cover')
       ) %>%
       select(-pcent_basal_cover) %>%
       unique %>%
+      group_by(site, sample, zonefct) %>% 
+      mutate(cnt = length(unique(meter))) %>% 
       group_by(site, sample, zonefct, species) %>%
       summarise(
-        yval = sum(pa) / n(),
+        yval = sum(pa) / unique(cnt),
         .groups = 'drop'
       )
 
@@ -447,6 +465,14 @@ sitesum_plo <- function(vegdat, site, delim, delimtyp, vegsel, var = c('fo', 'co
       fill = leglab
     )
   
+  p <- ggplotly(p) %>% 
+    plotly::config(
+      toImageButtonOptions = list(
+        format = "svg",
+        filename = "myplot"
+      )
+    )
+  
   return(p)
   
 }
@@ -534,6 +560,14 @@ sppsum_plo <- function(vegdat, sp, var = c('fo', 'cover'), sitefct = NULL, thm){
     p <- p + 
       geom_errorbar(aes(ymin = lov, ymax = hiv), position = dodge, width = 0)
 
+  p <- ggplotly(p) %>% 
+    plotly::config(
+      toImageButtonOptions = list(
+        format = "svg",
+        filename = "myplot"
+      )
+    )
+  
   return(p)
   
 }
@@ -767,6 +801,14 @@ treesum_plo <- function(treedat, site, byspecies, zonefct = NULL, var, thm){
         x = NULL, 
         fill = 'Species'
       )
+  
+  p <- ggplotly(p) %>% 
+    plotly::config(
+      toImageButtonOptions = list(
+        format = "svg",
+        filename = "myplot"
+      )
+    )
   
   return(p)
   
