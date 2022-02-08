@@ -286,8 +286,13 @@ sitezonesum_fun <- function(vegdat, site, zonefct = NULL, var = c('fo', 'cover')
       )
   
   out <- out %>% 
-    filter(yval > 0)
-     
+    filter(yval > 0) %>% 
+    mutate(
+      sample = paste('Year', sample)
+    ) %>% 
+    pivot_wider(names_from = 'sample', values_from = 'yval', values_fill = NA) %>%
+    arrange(zonefct, species) 
+
   return(out)
   
 }
@@ -303,13 +308,6 @@ sitezonesum_tab <- function(vegdat, site, zonefct = NULL, var = c('fo', 'cover')
   if(var == 'fo')
     ylab <- '% Frequency Occurrence'
 
-  totab <- totab %>% 
-    mutate(
-      sample = paste('Year', sample)
-    ) %>% 
-    pivot_wider(names_from = 'sample', values_from = 'yval', values_fill = NA) %>%
-    arrange(zonefct, species) 
-  
   tab <- reactable(
     totab,
     groupBy = c('zonefct'),
@@ -742,7 +740,10 @@ treesum_fun <- function(treedat, site, byspecies = T, zonefct = NULL, tresel = N
   }
  
   out <- out %>% 
-    filter(var %in% !!var)
+    filter(var %in% !!var) %>% 
+    mutate(
+      sample = paste('Year', sample)
+    )
 
   return(out)
   
@@ -753,9 +754,6 @@ treesum_tab <- function(treedat, site, byspecies = T, zonefct = NULL,
                         var = c("cm2_m2", "m2_ha", "relcov_per", "trees_ha", "trees_m2", "rich", "tree_height")){
   
   totab <- treesum_fun(treedat, site = site, byspecies = byspecies, zonefct = zonefct, var = var) %>% 
-    mutate(
-      sample = paste('Year', sample)
-    ) %>% 
     pivot_wider(names_from = 'sample', values_from = 'val', values_fill = NA) %>%
     arrange(zonefct) 
   
@@ -800,10 +798,7 @@ treesum_tab <- function(treedat, site, byspecies = T, zonefct = NULL,
 #' tree site summary plot
 treesum_plo <- function(treedat, site, byspecies, zonefct = NULL, tresel = NULL, var, dodge = T, thm){
   
-  toplo <- treesum_fun(treedat, site, byspecies, zonefct, tresel, var) %>% 
-    mutate(
-      sample = paste('Year', sample)
-    )
+  toplo <- treesum_fun(treedat, site, byspecies, zonefct, tresel, var)
   
   cols <- RColorBrewer::brewer.pal(8, 'Accent') %>% 
     colorRampPalette(.)

@@ -179,19 +179,18 @@ vegtab1 <- reactive({
   
 })
 
-# tabular tree summary by site
-treetab1 <- reactive({
+# tabular vegetation summary by site
+vegtabdl1 <- reactive({
   
   # input
-  sitsel3 <- input$sitsel3
-  zonsel3 <- input$zonsel3
-  varsel2 <- input$varsel2
-  aggsel <- input$aggsel
+  sitsel2 <- input$sitsel2
+  zonsel2 <- input$zonsel2
+  varsel1 <- input$varsel1
 
-  req(zonsel3)
+  req(zonsel2)
   
-  out <- treesum_tab(treedat, sitsel3, byspecies = aggsel, zonefct = zonsel3, var = varsel2)
-  
+  out <- sitezonesum_fun(vegdat, sitsel2, zonsel2, varsel1)
+
   return(out)
   
 })
@@ -216,6 +215,42 @@ treeplo1 <- reactive({
   
 })
 
+# tabular tree summary by site
+treetab1 <- reactive({
+  
+  # input
+  sitsel3 <- input$sitsel3
+  zonsel3 <- input$zonsel3
+  varsel2 <- input$varsel2
+  aggsel <- input$aggsel
+
+  req(zonsel3)
+  
+  out <- treesum_tab(treedat, sitsel3, byspecies = aggsel, zonefct = zonsel3, var = varsel2) 
+  
+  return(out)
+  
+})
+
+# tabular tree summary by site download
+treetabdl1 <- reactive({
+  
+  # input
+  sitsel3 <- input$sitsel3
+  zonsel3 <- input$zonsel3
+  varsel2 <- input$varsel2
+  aggsel <- input$aggsel
+
+  req(zonsel3)
+  
+  out <- treesum_fun(treedat, sitsel3, byspecies = aggsel, zonefct = zonsel3, var = varsel2) %>% 
+    pivot_wider(names_from = 'sample', values_from = 'val', values_fill = NA) %>%
+    arrange(zonefct) 
+  
+  return(out)
+  
+})
+
 # summary plot by species, all sites
 allplo1 <- reactive({
   
@@ -231,6 +266,34 @@ allplo1 <- reactive({
   return(out)
   
 })
+```
+
+```{r download}
+# download veg table
+output$vegtabdl1 <- downloadHandler(
+  filename = function(){'vegetation_summary.csv'},
+  content = function(file){
+    
+    # inputs
+    vegtabdl1 <- vegtabdl1()
+    
+    write.csv(vegtabdl1, file, quote = T, row.names = F)
+    
+  }
+)
+
+# download tree table
+output$treetabdl1 <- downloadHandler(
+  filename = function(){'tree_summary.csv'},
+  content = function(file){
+    
+    # inputs
+    treetabdl1 <- treetabdl1()
+    
+    write.csv(treetabdl1, file, quote = T, row.names = F)
+    
+  }
+)
 ```
 
 1 ZONES BY SITE {data-navmenu="PAGE SELECTION"}
@@ -409,7 +472,10 @@ fillCol(flex = c(NA, 1),
 
 ```{r}
 output$vegtab1 <- renderReactable(vegtab1())
-reactableOutput('vegtab1')
+fillCol(flex = c(NA, 1),
+  downloadBttn('vegtabdl1', 'Download data', style = 'simple', block = T, color = 'success'),
+  reactableOutput('vegtab1')
+)
 ```
 
 3 TREE SURVEYS {data-navmenu="PAGE SELECTION"}
@@ -511,7 +577,10 @@ fillCol(flex = c(NA, 1),
 
 ```{r}
 output$treetab1 <- renderReactable(treetab1())
-reactableOutput('treetab1')
+fillCol(flex = c(NA, 1),
+  downloadBttn('treetabdl1', 'Download data', style = 'simple', block = T, color = 'success'),
+  reactableOutput('treetab1')
+)
 ```
 
 4 BETWEEN SITE COMPARISONS {data-navmenu="PAGE SELECTION"}
