@@ -397,8 +397,9 @@ sitesum_fun <- function(vegdat, site, delim, delimtyp = c('Number', 'Distance'),
       ) %>%
       unique %>%
       group_by(sample, meter_grp, species) %>%
+      mutate(cnt = length(unique(meter))) %>% 
       summarise(
-        yval = sum(pa) / n(),
+        yval = sum(pa) / unique(cnt),
         .groups = 'drop'
       ) %>% 
       filter(yval > 0)
