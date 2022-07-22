@@ -15,113 +15,6 @@ box::use(
 gs4_deauth()
 drive_deauth()
 
-# import, format data from Google Drive -----------------------------------
-
-# data here https://drive.google.com/drive/u/0/folders/1ZbpbBfIxb5-BnXhYjymVNMzB88DqZeAO
-id <- '1x_ytLD6ro--QzcCClnDvFC04m7PmbVbtReVQkNktyd4'
-
-# do not use individual year sheets because the zone names are not corrected
-vegraw <- read_sheet(id, sheet = 'AllVeg', col_types = 'cdcccdccd')
-
-# combine, minor data edits
-vegdat <- vegraw %>% 
-  rename(
-    species = Vegetation_species, 
-    sample = `Sample_Set`
-  ) %>% 
-  rename_all(tolower) %>% 
-  rename(pcent_basal_cover = percent_basal_cover) %>% 
-  select(-tree_class) %>% 
-  mutate(
-    date = gsub('\\s\\(Part\\s2\\)$', '', date),
-    date = mdy(date), 
-    species = case_when(
-      species == 'Acrostichum danaeifolium' ~ 'Acrostichum danaefolium', 
-      species == 'Baccahris sp.' ~ 'Baccharis sp.', 
-      species == 'Mikania scadens' ~ 'Mikania scandens', 
-      species == 'Monoanthochloe littoralis' ~ 'Monanthochloe littoralis', 
-      species == 'Myrica cerifera' ~ 'Morella cerifera', 
-      species == 'Open water' ~ 'Open Water', 
-      species == 'Salicornia virginicus' ~ 'Salicornia virginica', 
-      species %in% c('Unknown 1', 'Unknown vine') ~ 'Unknown',
-      species == 'Woody debris' ~ 'Woody Debris', 
-      species %in% c('Woody Debris', 'none/detritus') ~ 'Woody Debris, none/detritus',
-      T ~ species
-    ), 
-    zone_name = case_when(
-      zone_name == 'Coastal upland' ~ 'Coastal Upland',
-      zone_name == 'Juncus marsh' ~ 'Juncus Marsh', 
-      zone_name == 'Schinus terebinthifolia' ~ 'Schinus terebinthifolius', 
-      zone_name == 'Salt barren' ~ 'Salt Barren',
-      zone_name == 'Schinus terebinthifolia' ~ 'Schinus terebinthifolius',
-      zone_name == 'Transitional marsh' ~ 'Transitional Marsh',
-      T ~ zone_name
-    ), 
-    pcent_basal_cover = case_when(
-      pcent_basal_cover > 100 ~ NA_real_, 
-      pcent_basal_cover < 0 ~ NA_real_, 
-      T ~ pcent_basal_cover
-    ), 
-    zone = toupper(zone)
-  ) %>% 
-  filter(!is.na(site)) %>% 
-  arrange(site, sample, meter)
-
-save(vegdat, file = here('data/vegdat.RData'))
-
-# get tree data -----------------------------------------------------------
-
-# data here https://docs.google.com/spreadsheets/d/1gvIqr6aPD_-hKKi7ZQvLcBL_h3jg7XIbhYEEVWWbFzU/edit#gid=1492814788
-id <- '1gvIqr6aPD_-hKKi7ZQvLcBL_h3jg7XIbhYEEVWWbFzU'
-
-treeraw <- read_sheet(id, sheet = 'PCQ calculations',  col_types = 'cdcccdccdddddddddddddcddddd')
-
-treedat <- treeraw %>% 
-  select(
-    site = Site, 
-    sample = Period, 
-    date = Date, 
-    zone_name = `Zone name`, 
-    zone = Zone, 
-    plot = Plot, 
-    pcq_direction = `PCQ direction`, 
-    species = `Tree species`,
-    dist_to_tree_m = `Dist to tree (m)`, 
-    dbh_cm = `DBH (cm)`, 
-    tree_height = `Tree height (m)`, 
-    eye_height_m = `Eye Height (m)`, 
-    dist_from_tree_m = `Dist. From Tree (m)`, 
-    angle = `Angle (degrees)`
-  ) %>% 
-  mutate(
-    date = mdy(date)
-  )
-
-save(treedat, file = here('data/treedat.RData'))
-
-# transect locations ------------------------------------------------------
-
-tranloc <- st_read(here('data/raw/All_CCHA_Transects.shp')) %>% 
-  st_make_valid() %>% 
-  mutate(
-    site = case_when(
-      Name == 'Cockroach Bay (R)' ~ 'Cockroach Bay',
-      Name == 'Ft. DeSoto (R)' ~ 'Fort DeSoto',
-      Name == 'Harbor Palms (R)' ~ 'Harbor Palms', 
-      Name == 'Hidden Harbor (N)' ~ 'Hidden Harbor', 
-      Name == 'Little Manatee River (N)' ~ 'Little Manatee River',
-      Name == 'Archie Mosaic (N)' ~ 'Mosaic', 
-      Name == 'TECO Big Bend (N)' ~ 'Big Bend - TECO',
-      Name == 'Upper Tampa Bay Park (N)' ~ 'Upper Tampa Bay Park', 
-      Name == 'Feather Sound (R)' ~ 'Weedon Island',
-      T ~ NA_character_
-    )
-  ) %>% 
-  filter(!is.na(site)) %>% 
-  select(site)
-
-save(tranloc, file = here('data/tranloc.RData'))
-
 # transect start stop -------------------------------------------------------------------------
 
 # transect start stop locations to identify landward/waterward
@@ -298,3 +191,146 @@ eledat <- fls %>%
 
 save(eledat, file = here('data/eledat.RData'))
 
+# vegetation data -----------------------------------------------------------------------------
+
+data(eledat)
+
+# data here https://drive.google.com/drive/u/0/folders/1ZbpbBfIxb5-BnXhYjymVNMzB88DqZeAO
+id <- '1x_ytLD6ro--QzcCClnDvFC04m7PmbVbtReVQkNktyd4'
+
+# do not use individual year sheets because the zone names are not corrected
+vegraw <- read_sheet(id, sheet = 'AllVeg', col_types = 'cdcccdccd')
+
+# combine, minor data edits
+vegdat <- vegraw %>% 
+  rename(
+    species = Vegetation_species, 
+    sample = `Sample_Set`
+  ) %>% 
+  rename_all(tolower) %>% 
+  rename(pcent_basal_cover = percent_basal_cover) %>% 
+  select(-tree_class) %>% 
+  mutate(
+    date = gsub('\\s\\(Part\\s2\\)$', '', date),
+    date = mdy(date), 
+    species = case_when(
+      species == 'Acrostichum danaeifolium' ~ 'Acrostichum danaefolium', 
+      species == 'Baccahris sp.' ~ 'Baccharis sp.', 
+      species == 'Mikania scadens' ~ 'Mikania scandens', 
+      species == 'Monoanthochloe littoralis' ~ 'Monanthochloe littoralis', 
+      species == 'Myrica cerifera' ~ 'Morella cerifera', 
+      species == 'Open water' ~ 'Open Water', 
+      species == 'Salicornia virginicus' ~ 'Salicornia virginica', 
+      species %in% c('Unknown 1', 'Unknown vine') ~ 'Unknown',
+      species == 'Woody debris' ~ 'Woody Debris', 
+      species %in% c('Woody Debris', 'none/detritus') ~ 'Woody Debris, none/detritus',
+      T ~ species
+    ), 
+    zone_name = case_when(
+      zone_name == 'Coastal upland' ~ 'Coastal Upland',
+      zone_name == 'Juncus marsh' ~ 'Juncus Marsh', 
+      zone_name == 'Schinus terebinthifolia' ~ 'Schinus terebinthifolius', 
+      zone_name == 'Salt barren' ~ 'Salt Barren',
+      zone_name == 'Schinus terebinthifolia' ~ 'Schinus terebinthifolius',
+      zone_name == 'Transitional marsh' ~ 'Transitional Marsh',
+      T ~ zone_name
+    ), 
+    pcent_basal_cover = case_when(
+      pcent_basal_cover > 100 ~ NA_real_, 
+      pcent_basal_cover < 0 ~ NA_real_, 
+      T ~ pcent_basal_cover
+    ), 
+    zone = toupper(zone)
+  ) %>% 
+  filter(!is.na(site)) %>% 
+  arrange(site, sample, meter)
+
+##
+# add elevation data by linear interpolation
+
+# elevation data no geometry
+eledatnogeo <- eledat %>% 
+  st_set_geometry(NULL) %>% 
+  select(site, elevation_m, distance_m) %>% 
+  group_by(site) %>% 
+  nest() %>% 
+  rename(eledat = data)
+
+# join site meter data with elevation data, interpolate
+interpele <- vegdat %>% 
+  select(site, sample, meter) %>% 
+  unique %>% 
+  group_by(site, sample) %>% 
+  nest() %>% 
+  left_join(eledatnogeo, by = 'site') %>% 
+  mutate(
+    data = purrr::pmap(list(data, eledat), function(data, eledat){
+      
+      data %>% 
+        mutate(
+          elevation_m = approx(x = eledat$distance_m, y = eledat$elevation_m, xout = meter)$y
+        )
+      
+    })
+  ) %>% 
+  select(-eledat) %>% 
+  unnest('data')
+
+# join with vegetation data
+vegdat <- vegdat %>% 
+  left_join(interpele, by = c('site', 'sample', 'meter'))
+
+save(vegdat, file = here('data/vegdat.RData'))
+
+# get tree data -----------------------------------------------------------
+
+# data here https://docs.google.com/spreadsheets/d/1gvIqr6aPD_-hKKi7ZQvLcBL_h3jg7XIbhYEEVWWbFzU/edit#gid=1492814788
+id <- '1gvIqr6aPD_-hKKi7ZQvLcBL_h3jg7XIbhYEEVWWbFzU'
+
+treeraw <- read_sheet(id, sheet = 'PCQ calculations',  col_types = 'cdcccdccdddddddddddddcddddd')
+
+treedat <- treeraw %>% 
+  select(
+    site = Site, 
+    sample = Period, 
+    date = Date, 
+    zone_name = `Zone name`, 
+    zone = Zone, 
+    plot = Plot, 
+    pcq_direction = `PCQ direction`, 
+    species = `Tree species`,
+    dist_to_tree_m = `Dist to tree (m)`, 
+    dbh_cm = `DBH (cm)`, 
+    tree_height = `Tree height (m)`, 
+    eye_height_m = `Eye Height (m)`, 
+    dist_from_tree_m = `Dist. From Tree (m)`, 
+    angle = `Angle (degrees)`
+  ) %>% 
+  mutate(
+    date = mdy(date)
+  )
+
+save(treedat, file = here('data/treedat.RData'))
+
+# transect locations ------------------------------------------------------
+
+tranloc <- st_read(here('data/raw/All_CCHA_Transects.shp')) %>% 
+  st_make_valid() %>% 
+  mutate(
+    site = case_when(
+      Name == 'Cockroach Bay (R)' ~ 'Cockroach Bay',
+      Name == 'Ft. DeSoto (R)' ~ 'Fort DeSoto',
+      Name == 'Harbor Palms (R)' ~ 'Harbor Palms', 
+      Name == 'Hidden Harbor (N)' ~ 'Hidden Harbor', 
+      Name == 'Little Manatee River (N)' ~ 'Little Manatee River',
+      Name == 'Archie Mosaic (N)' ~ 'Mosaic', 
+      Name == 'TECO Big Bend (N)' ~ 'Big Bend - TECO',
+      Name == 'Upper Tampa Bay Park (N)' ~ 'Upper Tampa Bay Park', 
+      Name == 'Feather Sound (R)' ~ 'Weedon Island',
+      T ~ NA_character_
+    )
+  ) %>% 
+  filter(!is.na(site)) %>% 
+  select(site)
+
+save(tranloc, file = here('data/tranloc.RData'))
