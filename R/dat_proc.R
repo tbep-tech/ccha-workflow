@@ -189,6 +189,15 @@ eledat <- fls %>%
   unnest('data') %>% 
   st_as_sf(coords = c('easting', 'northing'), crs = 2882)
 
+# all five sites in first report have elevation as feet, convert to meters
+eledat <- eledat %>% 
+  mutate(
+    elevation_m = case_when(
+      site %in% c("Mosaic", "Big Bend - TECO", "Hidden Harbor", "Little Manatee River", "Upper Tampa Bay Park") ~ elevation_m / 3.28084, 
+      T ~ elevation_m
+    )
+  )
+
 save(eledat, file = here('data/eledat.RData'))
 
 # vegetation data -----------------------------------------------------------------------------
