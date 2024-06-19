@@ -6,7 +6,6 @@ vegdatele <- read.csv('~/Desktop/vegdatele.csv')
 
 vegdatelezcomp <- vegdatele |> 
   arrange(Site, Sample_set, Meter) |>
-  filter(Site == 'Mosaic (Archie Creek)') |>
   group_nest(Site) |>
   mutate(
     data = map(data, function(x){
