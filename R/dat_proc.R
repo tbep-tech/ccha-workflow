@@ -8,7 +8,7 @@ box::use(
   sf[...],
   readxl[read_excel],
   googlesheets4[read_sheet,gs4_deauth],
-  googledrive[drive_deauth, drive_ls],
+  googledrive[drive_deauth, drive_ls, drive_download, as_id],
   tibble[enframe]
 )
 
@@ -156,15 +156,15 @@ eledat <- fls %>%
     data = purrr::pmap(list(data, ptrmv, ptord, revtyp,  cnvtyp), function(data, ptrmv, ptord, revtyp, cnvtyp){
       
       out <- data
-      
+
       # remove points
       if(!anyNA(ptrmv))
         out <- out %>% 
           filter(!point %in% ptrmv)
-      
+
       # reorder
       if(!anyNA(ptord))
-        out <- out[rank(ptord, out$point), ]
+        out <- out[order(match(out$point, ptord)), ]
       
       # reverse
       if(revtyp)
@@ -192,11 +192,60 @@ eledat <- fls %>%
 # all five sites in first report have elevation as feet, convert to meters
 eledat <- eledat %>% 
   mutate(
+    sample = 1,
     elevation_m = case_when(
       site %in% c("Mosaic", "Big Bend - TECO", "Hidden Harbor", "Little Manatee River", "Upper Tampa Bay Park") ~ elevation_m / 3.28084, 
       T ~ elevation_m
     )
-  )
+  ) %>% 
+  select(sample, site, distance_m, elevation_m)
+
+# get 2023 data (sample 3, no 2018 elevation data)
+tmpfile <- tempfile(fileext = '.xlsx')
+drive_download(
+  as_id("https://docs.google.com/spreadsheets/d/15x62uLeQpPEDNpLE_7TxCkCZUPdvKRil/edit?gid=2040543076#gid=2040543076"),
+  path = tmpfile, 
+  overwrite = TRUE, 
+  type = "xlsx")
+eleraw <- read_excel(tmpfile, sheet = 'RTK', col_types = 'text')
+unlink(tmpfile)
+
+eledat2 <- eleraw %>% 
+  filter(Type == 'Transect') %>% 
+  select(
+    ref = Reference, 
+    site = Site, 
+    distance_m = Meter, 
+    lat = Point_N, 
+    lon = Point_E, 
+    elevation_m = Corrected_NAVD88
+  ) %>% 
+  mutate_at(vars(distance_m, lon, lat, elevation_m), as.numeric) %>% 
+  mutate(
+    site = case_when(
+      site %in% c('Fort De Soto', 'Fort de Soto') ~ 'Fort DeSoto',
+      site == 'Little Manatee River (Mill Bayou)' ~ 'Little Manatee River',
+      site == 'Manatee River (Hidden Harbor)' ~ 'Hidden Harbor',
+      site == 'Mosaic (Archie Creek)' ~ 'Mosaic',
+      site == 'TECO (Big Bend)' ~ 'Big Bend - TECO',
+      T ~ site
+    ), 
+    sample = case_when(
+      grepl('01', ref) ~ 1, 
+      grepl('03', ref) ~ 3
+    ), 
+    lon = 3.28084 * lon, 
+    lat = 3.28084 * lat
+  ) %>% 
+  select(-ref) %>% 
+  select(sample, everything()) %>% 
+  arrange(site, sample, distance_m) %>% 
+  st_as_sf(coords = c('lon', 'lat'), crs = 2882) %>% 
+  filter(!is.na(elevation_m)) # no sample 1 elevation data
+
+# combine sample 1 and 3
+eledat <- bind_rows(eledat, eledat2) %>% 
+  arrange(site, sample, distance_m)
 
 save(eledat, file = here('data/eledat.RData'))
 
@@ -204,24 +253,26 @@ save(eledat, file = here('data/eledat.RData'))
 
 data(eledat)
 
-# data here https://drive.google.com/drive/u/0/folders/1ZbpbBfIxb5-BnXhYjymVNMzB88DqZeAO
-id <- '1x_ytLD6ro--QzcCClnDvFC04m7PmbVbtReVQkNktyd4'
-
-# do not use individual year sheets because the zone names are not corrected
-vegraw <- read_sheet(id, sheet = 'AllVeg', col_types = 'cdcccdccd')
+# raw data
+tmpfile <- tempfile(fileext = '.xlsx')
+drive_download(
+  as_id("https://docs.google.com/spreadsheets/d/1ME0TerfTWLEsOvdOZ95SaXPSGeVZr2aV/edit?gid=974034719#gid=974034719"),
+  path = tmpfile, 
+  overwrite = TRUE, 
+  type = "xlsx")
+vegraw <- read_excel(tmpfile, sheet = 'Transect vegetation', col_types = c('numeric', 'date', 'text', 'text', 'text', 'numeric', 'text', 'numeric', 'text', 'text', 'text'))
+zonraw <- read_excel(tmpfile, sheet = 'Transition locations', col_types = 'text')
+unlink(tmpfile)
 
 # combine, minor data edits
 vegdat <- vegraw %>% 
   rename(
     species = Vegetation_species, 
-    sample = `Sample_Set`
+    sample = Phase
   ) %>% 
-  rename_all(tolower) %>% 
-  rename(pcent_basal_cover = percent_basal_cover) %>% 
-  select(-tree_class) %>% 
+  rename_all(tolower) %>%  
   mutate(
-    date = gsub('\\s\\(Part\\s2\\)$', '', date),
-    date = mdy(date), 
+    date = as.Date(date),
     species = case_when(
       species == 'Acrostichum danaeifolium' ~ 'Acrostichum danaefolium', 
       species == 'Baccahris sp.' ~ 'Baccharis sp.', 
@@ -235,24 +286,27 @@ vegdat <- vegraw %>%
       species %in% c('Woody Debris', 'none/detritus') ~ 'Woody Debris, none/detritus',
       T ~ species
     ), 
-    zone_name = case_when(
-      zone_name == 'Coastal upland' ~ 'Coastal Upland',
-      zone_name == 'Juncus marsh' ~ 'Juncus Marsh', 
-      zone_name == 'Schinus terebinthifolia' ~ 'Schinus terebinthifolius', 
-      zone_name == 'Salt barren' ~ 'Salt Barren',
-      zone_name == 'Schinus terebinthifolia' ~ 'Schinus terebinthifolius',
-      zone_name == 'Transitional marsh' ~ 'Transitional Marsh',
-      T ~ zone_name
-    ), 
+    site = case_when(
+      site == 'Fort De Soto' ~ 'Fort DeSoto',
+      site == 'Little Manatee River (Mill Bayou)' ~ 'Little Manatee River',
+      site == 'Manatee River (Hidden Harbor)' ~ 'Hidden Harbor',
+      site == 'Mosaic (Archie Creek)' ~ 'Mosaic',
+      site == 'TECO (Big Bend)' ~ 'Big Bend - TECO',
+      T ~ site
+    ),
     pcent_basal_cover = case_when(
       pcent_basal_cover > 100 ~ NA_real_, 
       pcent_basal_cover < 0 ~ NA_real_, 
       T ~ pcent_basal_cover
     ), 
-    zone = toupper(zone)
+    zone = toupper(zone),
+    yr = year(date)
   ) %>% 
   filter(!is.na(site)) %>% 
-  arrange(site, sample, meter)
+  arrange(site, sample, meter) %>% 
+  select(
+    site, sample, yr, date, zone, meter, species, pcent_basal_cover
+  )
 
 ##
 # add elevation data by linear interpolation
@@ -260,18 +314,18 @@ vegdat <- vegraw %>%
 # elevation data no geometry
 eledatnogeo <- eledat %>% 
   st_set_geometry(NULL) %>% 
-  select(site, elevation_m, distance_m) %>% 
-  group_by(site) %>% 
+  select(sample, site, elevation_m, distance_m) %>% 
+  group_by(sample, site) %>% 
   nest() %>% 
   rename(eledat = data)
 
 # join site meter data with elevation data, interpolate
 interpele <- vegdat %>% 
-  select(site, sample, meter) %>% 
+  select(sample, site,  meter) %>% 
   unique %>% 
-  group_by(site, sample) %>% 
+  group_by(sample, site) %>% 
   nest() %>% 
-  left_join(eledatnogeo, by = 'site') %>% 
+  left_join(eledatnogeo, by = c('sample', 'site')) %>% 
   mutate(
     data = purrr::pmap(list(data, eledat), function(data, eledat){
       
@@ -288,6 +342,63 @@ interpele <- vegdat %>%
 # join with vegetation data
 vegdat <- vegdat %>% 
   left_join(interpele, by = c('site', 'sample', 'meter'))
+
+# fix zone names
+zondat <- zonraw %>% 
+  select(
+    sample = Phase, 
+    site = Site,
+    zone_name = `Zone name`,
+    zone = Zone
+  ) %>% 
+  mutate(
+    sample = as.numeric(sample),
+    site = case_when(
+      site == 'Fort De Soto' ~ 'Fort DeSoto',
+      site == 'Little Manatee River (Mill Bayou)' ~ 'Little Manatee River',
+      site == 'Manatee River (Hidden Harbor)' ~ 'Hidden Harbor',
+      site == 'Mosaic (Archie Creek)' ~ 'Mosaic',
+      site == 'TECO (Big Bend)' ~ 'Big Bend - TECO',
+      T ~ site
+    )
+  ) %>% 
+  group_nest(site) %>% 
+  mutate(
+    data = purrr::map(data, function(x){
+      x %>% 
+        select(zone_name, zone) %>% 
+        mutate(
+          zone_name = capwords(zone_name)
+        ) %>% 
+        distinct %>% 
+        arrange(zone)
+    })
+  ) %>% 
+  unnest(data) %>% 
+  mutate(
+    zone_name = case_when(
+      site == 'Cockroach Bay' & zone_name == 'Spartina Patens' ~ 'Spartina patens',
+      site == 'Fort DeSoto' & zone_name == 'Maytenus Phyllanthoides' ~ 'Maytenus phyllanthoides',
+      site == 'Fort DeSoto' & zone_name == 'Spartina Patens' ~ 'Spartina patens',
+      site == 'Fort DeSoto' & zone_name == 'Borrichia Frutescens' ~ 'Borrichia frutescens',
+      site == 'Fort DeSoto' & zone_name == 'Conocarpus Erectus' ~ 'Conocarpus erectus',
+      site == 'Harbor Palms' & zone_name == 'Spartina Alterniflora' ~ 'Spartina alterniflora',
+      site == 'Harbor Palms' & grepl('Juncus', zone_name) ~ 'Juncus roemerianus',
+      site == 'Harbor Palms' & zone_name == 'Iva Frutescens' ~ 'Iva frutescens',
+      site == 'Harbor Palms' & zone_name == 'Schinus Terebinthifolius' ~ 'Schinus terebinthifolius',
+      site == 'Mosaic' & zone == 'E' ~ 'Coastal Upland Transition', 
+      site == 'Upper Tampa Bay Park' & zone_name == 'Fresh Water Pond' ~ 'Pond', 
+      site == 'Weedon Island' & zone_name == 'Spartina Alterniflora' ~ 'Spartina alterniflora',
+      site == 'Weedon Island' & zone_name == 'Spartina Patens' ~ 'Spartina patens',
+      T ~ zone_name
+    )
+  ) %>% 
+  distinct() %>% 
+  filter(!zone_name == 'End')
+
+# join correct zone names to vegdat  
+vegdat <- vegdat %>% 
+  left_join(zondat, by = c('site', 'zone'))
 
 save(vegdat, file = here('data/vegdat.RData'))
 
