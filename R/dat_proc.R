@@ -12,6 +12,8 @@ box::use(
   tibble[enframe]
 )
 
+source('R/funcs.R')
+
 gs4_deauth()
 drive_deauth()
 
@@ -243,10 +245,15 @@ eledat2 <- eleraw %>%
   st_as_sf(coords = c('lon', 'lat'), crs = 2882) %>% 
   filter(!is.na(elevation_m)) # no sample 1 elevation data
 
-# combine sample 1 and 3
+# combine sample 1 and 3, remove dup elevation values at same meter mark (only two)
 eledat <- bind_rows(eledat, eledat2) %>% 
-  arrange(site, sample, distance_m)
-
+  arrange(site, sample, distance_m) %>% 
+  summarise(
+    across(geometry, st_union),
+    elevation_m = mean(elevation_m, na.rm = T), 
+    .by = c(sample, site, distance_m)
+  )
+  
 save(eledat, file = here('data/eledat.RData'))
 
 # vegetation data -----------------------------------------------------------------------------
@@ -328,12 +335,12 @@ interpele <- vegdat %>%
   left_join(eledatnogeo, by = c('sample', 'site')) %>% 
   mutate(
     data = purrr::pmap(list(data, eledat), function(data, eledat){
-      
-      data %>% 
+
+      data %>%
         mutate(
           elevation_m = approx(x = eledat$distance_m, y = eledat$elevation_m, xout = meter)$y
         )
-      
+
     })
   ) %>% 
   select(-eledat) %>% 
