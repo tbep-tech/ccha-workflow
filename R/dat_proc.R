@@ -312,7 +312,7 @@ vegdat <- vegraw %>%
       sample == 1 & zone == 'E' & site == 'Mosaic' ~ 'Coastal upland transition', 
       T ~ zone_name
     ),
-    zone_name_simp = case_when(
+    zone_name_simp = case_when( # follows data/raw/vegdatele.csv from KR
       zone_name %in% c("Mangrove Fringe", "Immature Mangrove Fringe", "Tidal Creek", 
                        "Tidal creek", "YM",
                        "Mangrove", "Short mangrove", "Mangrove mix", "MF", 
