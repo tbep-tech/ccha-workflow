@@ -101,11 +101,9 @@ observeEvent(input$sitsel1, {
 sitplo1 <- reactive({
   
   # input
-  sitsel1 <- input$sitsel1
+  sitsel1 <- isolate(input$sitsel1)
   zonsel1 <- input$zonsel1
-  
-  req(zonsel1)
-  
+
   out <- sitezonedst_plo1(vegdat, site = sitsel1, zonefct = zonsel1, thm)
   
   return(out)
@@ -116,7 +114,7 @@ sitplo1 <- reactive({
 sitplo2 <- reactive({
   
   # input
-  sitsel1 <- input$sitsel1
+  sitsel1 <- isolate(input$sitsel1)
   zonsel1 <- input$zonsel1
   
   req(zonsel1)
@@ -131,7 +129,7 @@ sitplo2 <- reactive({
 vegplo1 <- reactive({
   
   # input
-  sitsel2 <- input$sitsel2
+  sitsel2 <- isolate(input$sitsel2)
   zonsel2 <- input$zonsel2
   
   req(zonsel2)
@@ -146,9 +144,10 @@ vegplo1 <- reactive({
 vegplo2 <- reactive({
   
   # input
-  sitsel2 <- input$sitsel2
+  sitsel2 <- isolate(input$sitsel2)
   zonsel2 <- input$zonsel2
   varsel1 <- input$varsel1
+  dgesel1 <- input$dgesel1
   vegsel <- input$vegsel
   metsel <- input$metsel
   dlmtyp <- input$dlmtyp
@@ -157,7 +156,7 @@ vegplo2 <- reactive({
   req(metsel)
   req(vegsel)
   
-  out <- sitesum_plo(vegdat, sitsel2, delim = metsel, delimtyp = dlmtyp, vegsel = vegsel, var = varsel1, zonefct = zonsel2, thm = thm)
+  out <- sitesum_plo(vegdat, sitsel2, delim = metsel, delimtyp = dlmtyp, vegsel = vegsel, var = varsel1, zonefct = zonsel2, dodge = dgesel1, thm = thm)
   
   return(out)
   
@@ -167,7 +166,7 @@ vegplo2 <- reactive({
 vegtab1 <- reactive({
   
   # input
-  sitsel2 <- input$sitsel2
+  sitsel2 <- isolate(input$sitsel2)
   zonsel2 <- input$zonsel2
   varsel1 <- input$varsel1
 
@@ -199,17 +198,17 @@ vegtabdl1 <- reactive({
 treeplo1 <- reactive({
   
   # input
-  sitsel3 <- input$sitsel3
+  sitsel3 <- isolate(input$sitsel3)
   zonsel3 <- input$zonsel3
   varsel2 <- input$varsel2
   aggsel <- input$aggsel
-  dgesel <- input$dgesel
+  dgesel2 <- input$dgesel2
   tresel <- input$tresel
   
   req(zonsel3)
   req(tresel)
   
-  out <- treesum_plo(treedat, sitsel3, byspecies = aggsel, zonefct = zonsel3, tresel = tresel, var = varsel2, dodge = dgesel, thm = thm)
+  out <- treesum_plo(treedat, sitsel3, byspecies = aggsel, zonefct = zonsel3, tresel = tresel, var = varsel2, dodge = dgesel2, thm = thm)
   
   return(out)
   
@@ -219,7 +218,7 @@ treeplo1 <- reactive({
 treetab1 <- reactive({
   
   # input
-  sitsel3 <- input$sitsel3
+  sitsel3 <- isolate(input$sitsel3)
   zonsel3 <- input$zonsel3
   varsel2 <- input$varsel2
   aggsel <- input$aggsel
@@ -405,7 +404,7 @@ plotOutput('vegplo1')
 output$vegplo2 <- renderPlotly(vegplo2())
 fillCol(flex = c(NA, 1),
   column(12, 
-    column(3, selectInput('spptyp1', 'Select species by:', choices = c('Top n', 'Names'), width = '100%')), 
+    column(2, selectInput('spptyp1', 'Select species by:', choices = c('Top n', 'Names'), width = '100%')), 
     column(3, 
       renderUI({
         
@@ -435,7 +434,7 @@ fillCol(flex = c(NA, 1),
         
       })     
     ),
-    column(3, selectInput('dlmtyp', 'Select bins by:', choices = c('Number', 'Distance'), width = '100%')), 
+    column(2, selectInput('dlmtyp', 'Select meter bins by:', choices = c('Number', 'Distance'), width = '100%')), 
     column(3, 
       renderUI({
         
@@ -451,17 +450,22 @@ fillCol(flex = c(NA, 1),
             round(0)
           minv <- 3
           ttl <- 'Select length of meter bins:'
+          strval <- 25
         }
         
         if(dlmtyp == 'Number'){
           minv <- 1
           maxv <- 30
           ttl <- 'Select number of meter bins:'
+          strval <- 5
         }
           
-        sliderInput('metsel', ttl, min = minv, max = maxv, step = 1, value = 10, width = '100%')
+        sliderInput('metsel', ttl, min = minv, max = maxv, step = 1, value = strval, width = '100%')
              
       })
+    ),
+    column(2, 
+      materialSwitch(inputId = 'dgesel1', label = 'Separate columns by species?', value = T, width = '100%')
     )
   ),  
   plotlyOutput('vegplo2')
@@ -522,9 +526,6 @@ column(12,
 column(12, 
   materialSwitch(inputId = 'aggsel', label = 'Show results by species?', value = T, width = '100%')
 )
-column(12, 
-  materialSwitch(inputId = 'dgesel', label = 'Separate columns by species?', value = T, width = '100%')
-)
 ```
 
 ### About
@@ -567,6 +568,9 @@ fillCol(flex = c(NA, 1),
         return(out)
         
       })     
+    ),
+    column(3, 
+      materialSwitch(inputId = 'dgesel2', label = 'Separate columns by species?', value = T, width = '100%')
     )
   ),
   plotlyOutput('treeplo1')

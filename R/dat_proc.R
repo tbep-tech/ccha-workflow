@@ -287,10 +287,10 @@ vegdat <- vegraw %>%
       species == 'Monoanthochloe littoralis' ~ 'Monanthochloe littoralis', 
       species == 'Myrica cerifera' ~ 'Morella cerifera', 
       species == 'Open water' ~ 'Open Water', 
-      species == 'Salicornia virginicus' ~ 'Salicornia virginica', 
+      species == 'Salicornia virginicus' ~ 'Salicornia virginica',
+      species == 'pneumatophore' ~ 'Pneumatophore',
       species %in% c('Unknown 1', 'Unknown vine') ~ 'Unknown',
-      species == 'Woody debris' ~ 'Woody Debris', 
-      species %in% c('Woody Debris', 'none/detritus') ~ 'Woody Debris, none/detritus',
+      species %in% c('Woody Debris', 'none/detritus', 'woody debris', 'Woody debris') ~ 'Woody Debris, none/detritus',
       T ~ species
     ), 
     site = case_when(
