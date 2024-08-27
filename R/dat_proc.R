@@ -307,12 +307,37 @@ vegdat <- vegraw %>%
       T ~ pcent_basal_cover
     ), 
     zone = toupper(zone),
-    yr = year(date)
+    yr = year(date),
+    zone_name = case_when( # this should be upland transition but labelled as upland
+      sample == 1 & zone == 'E' & site == 'Mosaic' ~ 'Coastal upland transition', 
+      T ~ zone_name
+    ),
+    zone_name_simp = case_when(
+      zone_name %in% c("Mangrove Fringe", "Immature Mangrove Fringe", "Tidal Creek", 
+                       "Tidal creek", "YM",
+                       "Mangrove", "Short mangrove", "Mangrove mix", "MF", 
+                       "Immature mangrove fringe", "Mangrove fringe") ~ "Mangrove",
+      zone_name %in% c("Brazilian Pepper Berm", "Brazilian pepper berm", "BPB", "Maytenus phyllanthoides", 
+                       "Conocarpus erectus", "Schinus terebinthifolius") ~ "Salt-tolerant trees",
+      zone_name %in% c("Salt Marsh", "Juncus Marsh", "Spartina patens", "RF",
+                       "Borrichia frutescens", "Juncus roemerianus", 
+                       "Spartina alterniflora", "Juncus transition", 
+                       "Transitional marsh", "SB") ~ "Salt marsh",
+      zone_name %in% c("Salt Barren", "HT", "S", "ST", "Tidal Mud Flat", 
+                       "Salt barren", "Salt barren by mangrove fringe", 
+                       "Unvegetated salt barren", "High salt barren") ~ "Salt barren",
+      zone_name %in% c("Transitional Wetland", "Transitional wetland", "Upland transition", 
+                       "FWMT", "Iva frutescens", "Coastal upland (transition)", 
+                       "Coastal upland transition", "Dead trees") ~ "Upland transition",
+      zone_name %in% c("U", "Upland", "Coastal Upland", "Coastal upland") ~ "Coastal upland",
+      zone_name %in% c("Channel", "FWP", "Water body", "Pond") ~ "Water body",
+      TRUE ~ zone_name  # Default case
+    )
   ) %>% 
   filter(!is.na(site)) %>% 
   arrange(site, sample, meter) %>% 
   select(
-    site, sample, yr, date, zone, meter, species, pcent_basal_cover
+    site, sample, yr, date, zone, zone_name_simp, meter, species, pcent_basal_cover
   )
 
 ##
@@ -350,7 +375,7 @@ interpele <- vegdat %>%
 vegdat <- vegdat %>% 
   left_join(interpele, by = c('site', 'sample', 'meter'))
 
-# fix zone names
+# fix zone names, this is still more detail than zone_name_simp
 zondat <- zonraw %>% 
   select(
     sample = Phase, 
