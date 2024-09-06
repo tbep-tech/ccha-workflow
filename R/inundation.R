@@ -1,5 +1,6 @@
 library(tidyverse)
 library(cobs)
+library(here)
 
 msl2023 <- read.table('https://tidesandcurrents.noaa.gov/sltrends/data/8726520_meantrend.csv', sep = ',',
                   skip = 6, header = F) %>% 
@@ -29,8 +30,8 @@ scen <- tibble::tribble(
     2100,  1.90, 3.90, 8.50
   )
 
-yrest <- 2000:2100
 # interpolate tidal increase each year using a spline with constant rate increase
+yrest <- 2000:2100
 scenapprox <- scen %>% 
   pivot_longer(names_to = 'scenario', values_to = 'feet', -yrs) %>% 
   group_nest(scenario) %>% 
@@ -55,12 +56,12 @@ scenapprox <- scen %>%
   filter(yrs >= 2023) %>% 
   mutate(
     chg_m = c(0, diff(MSL_m)), 
-    chg_m = cumsum(chg_m),
+    MSL_m = cumsum(chg_m),
     .by = scenario
   ) %>% 
-  mutate(
-    MSL_m = chg_m + msl2023,
-  ) %>% 
+  # mutate(
+  #   MSL_m = chg_m + msl2023,
+  # ) %>% 
   select(scenario, yrs, MSL_m) #%>%
   # group_nest(yrs, .key = 'MSL_m')
 
@@ -68,6 +69,18 @@ ggplot(scenapprox, aes(x = yrs, y = MSL_m, color = scenario)) +
   geom_line()
 
 vegdatele <- read.csv(here('data/raw/vegdatele.csv'))
+
+# starting elevation
+strele <- vegdatele %>% 
+  filter(Sample_set == 3) %>% 
+  select(Site, Meter, Elevation_NAVD88) %>% 
+  distinct() %>% 
+  filter(Meter == 0) %>% 
+  select(-Meter)
+
+scenapproxsite <- crossing(strele, scenapprox) %>% 
+  mutate(MSL_m = MSL_m + Elevation_NAVD88) %>% 
+  select(-Elevation_NAVD88)
 
 # accretion rates, based on RTK elevation diff per year  
 accrt <- vegdatele %>%
@@ -97,8 +110,9 @@ ele <- vegdatele %>%
     yrs = 2023:2100 
   )
 
-inund <- ele %>% #full_join(ele, accrt, by = 'Site') %>% 
-  full_join(scenapprox, by = 'yrs', relationship = 'many-to-many') %>% 
+# join data for eval
+jndat <- ele %>% #full_join(ele, accrt, by = 'Site') %>% 
+  full_join(scenapproxsite, by = c('yrs', 'Site'), relationship = 'many-to-many') %>% 
   # mutate(
   #   acc = c(0, cumsum(accrate[-1])),
   #   .by = Site
@@ -116,17 +130,23 @@ inund <- ele %>% #full_join(ele, accrt, by = 'Site') %>%
   # ) %>% 
   # select(-acc) %>% 
   unnest(data) %>% 
+  mutate(
+    scenario = factor(scenario, levels = c('low', 'mid', 'high'), labels = c('Low', 'Mid', 'High'))
+  )
+
+# percent inundated over time (assumes no accretion)
+inund <- jndat %>% 
   summarise(
     perinund = sum(Elevation_NAVD88 < MSL_m) / n(),
     .by = c(Site, yrs, scenario)
   ) 
 
-tmp <- inund %>% 
+toplo1 <- jndat %>% 
   filter(yrs %in% c(2023, 2100))
 
-ggplot(tmp, aes(x = Meter, y = Elevation_NAVD88, color = Site, group = Site)) + 
+ggplot(toplo1, aes(x = Meter, y = Elevation_NAVD88, color = scenario, group = scenario)) + 
   geom_line() +
-  facet_wrap(yrs~scenario) +
+  facet_wrap(yrs~Site) +
   geom_hline(aes(yintercept = MSL_m), linetype = 'dashed') +
   theme_minimal()
 
