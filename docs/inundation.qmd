@@ -19,7 +19,7 @@ library(cobs)
 library(here)
 ```
 
-This analysis is a potential inundation scenario for the CCHA transects based on sea level rise projections in the Tampa Bay region.  Sea level is based on the St. Petersburg NOAA tide guage (8726520) and three scenarios of low-intermediate, intermediate, and high projection estimates consistent with the National Climate Assessment (as described in [TBEP technical publication #05-19](https://drive.google.com/file/d/1c_KTSJ4TgVX9IugnyDadr2Hc0gjAuQg2/view)). Zero accretion and inland migration of habitats is assumed and estimates herein are conservative.  The analysis present the percent of each CCHA transect that is inundated from 2023 to 2021, where the 2023 sea level is the recorded elevation at the start of each transect.
+This analysis is a potential inundation scenario for the CCHA transects based on sea level rise projections in the Tampa Bay region.  Sea level is based on the St. Petersburg NOAA tide guage (8726520) and three scenarios of low-intermediate, intermediate, and high projection estimates consistent with the National Climate Assessment (as described in [TBEP technical publication #05-19](https://drive.google.com/file/d/1c_KTSJ4TgVX9IugnyDadr2Hc0gjAuQg2/view)). __Zero accretion and no inland migration of habitats is assumed and estimates herein are conservative.__  The analysis present the percent of each CCHA transect that is inundated from 2023 to 2021, where the 2023 sea level is the recorded elevation at the start of each transect.
 
 ```{r}
 #| fig-height: 4
@@ -147,7 +147,7 @@ scenapproxsite <- crossing(strele, scenapprox) %>%
 
 ele <- vegdatele %>% 
   filter(Sample_set == 3) %>% 
-  select(Site, Meter, Elevation_NAVD88) %>% 
+  select(Site, Simplified_zone_name, Meter, Elevation_NAVD88) %>% 
   distinct() %>% 
   group_nest(Site) %>% 
   crossing(
@@ -181,12 +181,20 @@ inund <- jndat %>%
     perinund = sum(Elevation_NAVD88 < MSL_m) / n(),
     .by = c(Site, yrs, scenario)
   ) 
+
+# percent zone inundation over time (assumes no accretion)
+zoneinund <- jndat %>% 
+  summarise(
+    perinund = sum(Elevation_NAVD88 < MSL_m) / n(),
+    .by = c(Simplified_zone_name, yrs, scenario)
+  ) 
+
 ```
 
 ```{r}
 #| fig-height: 6
 #| fig-width: 8
-#| fig-cap: "Projected relative sea level rise in 2100 for three scenarios by CCHA transect"
+#| fig-cap: "Projected relative sea level rise in 2100 for three scenarios by CCHA transect. Assumes no accretion nor inland migration."
 toplo1 <- jndat %>% 
   filter(yrs %in% c(2100))
 
@@ -210,14 +218,50 @@ ggplot(toplo1, aes(x = Meter, y = Elevation_NAVD88)) +
 ```{r}
 #| fig-height: 6
 #| fig-width: 8
+#| fig-cap: "Percent of CCHA transect inundated from 2023 to 2100 for three scenarios. Estimated year of inundation for each scenario is shown on the bottom of each facet.  Assumes no accretion nor inland migration."
+inundyr <- inund %>% 
+  filter(perinund >= 1) %>% 
+  filter(yrs == min(yrs), .by = c(Site, scenario))
 ggplot(inund, aes(x = yrs, y = perinund, color = scenario, group = scenario)) +
   geom_line(linewidth = 1) +
+  geom_segment(data = inundyr, aes(x = yrs, xend = yrs, y = 0, yend = 1, color = scenario), linetype = 'dashed') +
+  geom_text(data = inundyr, aes(label = yrs, x = yrs), y = 0, hjust = 0, vjust = -0.2, angle = 90, show.legend = F) +
   facet_wrap(~Site) +
   scale_color_manual(values = scencols) +
+  scale_y_continuous(labels = scales::percent) +
   theme_minimal() + 
   theme(
     panel.grid.minor = element_blank(),
-    legend.position = 'top'
+    legend.position = 'top',
+    axis.text.x = element_text(angle = 40, hjust = 1, size = 8)
+  ) + 
+  labs(
+    x = 'Year',
+    y = 'Percent inundated',
+    color = 'Scenario'
+  )
+```
+
+
+```{r}
+#| fig-height: 6
+#| fig-width: 8
+#| fig-cap: "Percent of CCHA zones inundated from 2023 to 2100 for three scenarios. Estimated year of inundation for each scenario is shown on the bottom of each facet.  Assumes no accretion nor inland migration."
+inundyr <- zoneinund %>% 
+  filter(perinund >= 1) %>% 
+  filter(yrs == min(yrs), .by = c(Simplified_zone_name, scenario))
+ggplot(zoneinund, aes(x = yrs, y = perinund, color = scenario, group = scenario)) +
+  geom_line(linewidth = 1) +
+  geom_segment(data = inundyr, aes(x = yrs, xend = yrs, y = 0, yend = 1, color = scenario), linetype = 'dashed') +
+  geom_text(data = inundyr, aes(label = yrs, x = yrs), y = 0, hjust = 0, vjust = -0.2, angle = 90, show.legend = F) +
+  facet_wrap(~Simplified_zone_name) +
+  scale_color_manual(values = scencols) +
+  scale_y_continuous(labels = scales::percent) +
+  theme_minimal() + 
+  theme(
+    panel.grid.minor = element_blank(),
+    legend.position = 'top',
+    axis.text.x = element_text(angle = 40, hjust = 1, size = 8)
   ) + 
   labs(
     x = 'Year',
