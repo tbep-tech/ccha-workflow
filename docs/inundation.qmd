@@ -9,7 +9,7 @@ lightbox: true
 execute: 
   warning: false
   message: false
-  echo: false
+  echo: true
 ---
 
 ```{r}
