@@ -1,0 +1,227 @@
+---
+title: "Estimated inundation time by CCHA transct"
+format: 
+  html:
+    code-fold: true
+editor: source
+lightbox: true
+
+execute: 
+  warning: false
+  message: false
+  echo: false
+---
+
+```{r}
+#| label: setup
+library(tidyverse)
+library(cobs)
+library(here)
+```
+
+This analysis is a potential inundation scenario for the CCHA transects based on sea level rise projections in the Tampa Bay region.  Sea level is based on the St. Petersburg NOAA tide guage (8726520) and three scenarios of low-intermediate, intermediate, and high projection estimates consistent with the National Climate Assessment (as described in [TBEP technical publication #05-19](https://drive.google.com/file/d/1c_KTSJ4TgVX9IugnyDadr2Hc0gjAuQg2/view)). Zero accretion and inland migration of habitats is assumed and estimates herein are conservative.  The analysis present the percent of each CCHA transect that is inundated from 2023 to 2021, where the 2023 sea level is the recorded elevation at the start of each transect.
+
+```{r}
+#| fig-height: 4
+#| fig-width: 7
+#| fig-cap: "Relative sea level change from 2023 for three scenarios of sea level rise in the Tampa Bay region."
+# msl2023 <- read.table('https://tidesandcurrents.noaa.gov/sltrends/data/8726520_meantrend.csv', sep = ',',
+#                   skip = 6, header = F) %>% 
+#   select(
+#     Year = V1, 
+#     Month = V2, 
+#     MSL = V3
+#   ) %>% 
+#   mutate(
+#     Date = lubridate::make_date(Year, Month, 1)
+#   ) %>% 
+#   filter(Year == 2023) %>% 
+#   pull(MSL) %>%
+#   mean() 
+
+# scnario colors as ramp
+scencols <- c( '#fee08b', '#fdae61', '#d73027')
+
+# from TBEP #05-19   
+scen <- tibble::tribble(
+    ~yrs, ~low, ~mid, ~high,
+    2000,  0,    0,    0,
+    2030,  0.56, 0.79, 1.25,
+    2040,  0.72, 1.08, 1.77,
+    2050,  0.95, 1.44, 2.56,
+    2060,  1.15, 1.87, 3.48,
+    2070,  1.35, 2.33, 4.56,
+    2080,  1.54, 2.82, 5.71,
+    2090,  1.71, 3.38, 7.05,
+    2100,  1.90, 3.90, 8.50
+  )
+
+# interpolate tidal increase each year using a spline with constant rate increase
+yrest <- 2000:2100
+scenapprox <- scen %>% 
+  pivot_longer(names_to = 'scenario', values_to = 'feet', -yrs) %>% 
+  mutate(
+    scenario = factor(scenario, levels = c('low', 'mid', 'high'), 
+                      labels = c('Low-Intermediate', 'Intermediate', 'High')
+    )
+  ) %>% 
+  group_nest(scenario) %>% 
+  mutate(
+    pred = purrr::map(data, function(data){
+      
+      cobs_fit <- cobs(data$yrs, data$feet, constraint = "increase", nknots = 5, print.mesg = F, print.warn = F)
+      cobs_pred <- predict(cobs_fit, nz = length(yrest))
+
+      tibble(
+        yrs = yrest, 
+        feet = cobs_pred[,2]
+      )
+  
+    })
+  ) %>% 
+  select(-data) %>% 
+  unnest('pred') %>% 
+  mutate(
+    MSL_m = feet * 0.3048
+  ) %>%  
+  filter(yrs >= 2023) %>% 
+  mutate(
+    chg_m = c(0, diff(MSL_m)), 
+    MSL_m = cumsum(chg_m),
+    .by = scenario
+  ) %>% 
+  # mutate(
+  #   MSL_m = chg_m + msl2023,
+  # ) %>% 
+  select(scenario, yrs, MSL_m) #%>%
+  # group_nest(yrs, .key = 'MSL_m')
+
+ggplot(scenapprox, aes(x = yrs, y = MSL_m, color = scenario)) + 
+  theme_minimal() + 
+  theme(
+    panel.grid.minor = element_blank(), 
+    legend.position = 'top'
+  ) +
+  scale_color_manual(values = scencols) + 
+  geom_line(linewidth = 1) + 
+  labs(
+    x = NULL, 
+    y = 'Relative sea level change from 2023 (m)', 
+    color = 'Scenario'
+  )
+```
+
+```{r}
+vegdatele <- read.csv(here('data/raw/vegdatele.csv'))
+
+# starting elevation
+strele <- vegdatele %>% 
+  filter(Sample_set == 3) %>% 
+  select(Site, Meter, Elevation_NAVD88) %>% 
+  distinct() %>% 
+  filter(Meter == 0) %>% 
+  select(-Meter)
+
+scenapproxsite <- crossing(strele, scenapprox) %>% 
+  mutate(MSL_m = MSL_m + Elevation_NAVD88) %>% 
+  select(-Elevation_NAVD88)
+
+# # accretion rates, based on RTK elevation diff per year  
+# accrt <- vegdatele %>%
+#   mutate(
+#     yr = year(mdy(Date))
+#   ) %>% 
+#   summarise(
+#     meanele = mean(Elevation_NAVD88, na.rm = T), 
+#     .by = c(Site, yr)
+#   ) %>% 
+#   summarise(
+#     elediff = diff(meanele), 
+#     yrdiff = diff(yr), 
+#     .by = Site
+#   ) %>% 
+#   mutate(
+#     accrate = elediff / yrdiff
+#   ) %>% 
+#   select(Site, accrate)
+
+ele <- vegdatele %>% 
+  filter(Sample_set == 3) %>% 
+  select(Site, Meter, Elevation_NAVD88) %>% 
+  distinct() %>% 
+  group_nest(Site) %>% 
+  crossing(
+    yrs = 2023:2100 
+  )
+
+# join data for eval
+jndat <- ele %>% #full_join(ele, accrt, by = 'Site') %>% 
+  full_join(scenapproxsite, by = c('yrs', 'Site'), relationship = 'many-to-many') %>% 
+  # mutate(
+  #   acc = c(0, cumsum(accrate[-1])),
+  #   .by = Site
+  # ) %>% 
+  # select(-accrate) %>% 
+  # mutate(
+  #   data = purrr::pmap(list(acc, data), function(acc, data){
+  #     
+  #     data %>%
+  #       mutate(
+  #         Elevation_NAVD88 = Elevation_NAVD88 + acc
+  #       )
+  # 
+  #   })
+  # ) %>% 
+  # select(-acc) %>% 
+  unnest(data)
+
+# percent inundated over time (assumes no accretion)
+inund <- jndat %>% 
+  summarise(
+    perinund = sum(Elevation_NAVD88 < MSL_m) / n(),
+    .by = c(Site, yrs, scenario)
+  ) 
+```
+
+```{r}
+#| fig-height: 6
+#| fig-width: 8
+#| fig-cap: "Projected relative sea level rise in 2100 for three scenarios by CCHA transect"
+toplo1 <- jndat %>% 
+  filter(yrs %in% c(2100))
+
+ggplot(toplo1, aes(x = Meter, y = Elevation_NAVD88)) + 
+  geom_line() +
+  facet_wrap(~Site, scales = 'free_x') +
+  geom_hline(aes(yintercept = MSL_m, color = scenario), linewidth = 1) +
+  scale_color_manual(values = scencols) +
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    legend.position = 'top'
+  ) + 
+  labs(
+    x = 'Transect distance (m)',
+    y = 'Elevation (m)',
+    color = 'Scenario'
+  )
+```
+
+```{r}
+#| fig-height: 6
+#| fig-width: 8
+ggplot(inund, aes(x = yrs, y = perinund, color = scenario, group = scenario)) +
+  geom_line(linewidth = 1) +
+  facet_wrap(~Site) +
+  scale_color_manual(values = scencols) +
+  theme_minimal() + 
+  theme(
+    panel.grid.minor = element_blank(),
+    legend.position = 'top'
+  ) + 
+  labs(
+    x = 'Year',
+    y = 'Percent inundated',
+    color = 'Scenario'
+  )
+```
