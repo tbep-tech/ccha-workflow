@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.4.549">
+<meta name="generator" content="quarto-1.4.533">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -107,7 +107,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(here)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>This analysis is a potential inundation scenario for the CCHA transects based on sea level rise projections in the Tampa Bay region. Sea level is based on the St.&nbsp;Petersburg NOAA tide guage (8726520) and three scenarios of low-intermediate, intermediate, and high projection estimates consistent with the National Climate Assessment (as described in <a href="https://drive.google.com/file/d/1c_KTSJ4TgVX9IugnyDadr2Hc0gjAuQg2/view">TBEP technical publication #05-19</a>). <strong>Zero accretion and no inland migration of habitats is assumed and estimates herein are conservative.</strong> The analysis present the percent of each CCHA transect that is inundated from 2023 to 2021, where the 2023 sea level is the recorded elevation at the start of each transect.</p>
+<p>This analysis is a potential inundation scenario for the CCHA transects based on sea level rise projections in the Tampa Bay region. Sea level is based on the St.&nbsp;Petersburg NOAA tide guage (8726520) and three scenarios of low-intermediate, intermediate, and high projection estimates consistent with the National Climate Assessment (as described in <a href="https://drive.google.com/file/d/1c_KTSJ4TgVX9IugnyDadr2Hc0gjAuQg2/view">TBEP technical publication #05-19</a>). <strong>Zero accretion and no inland migration of habitats is assumed and estimates herein are conservative.</strong> The 2023 sea level is the recorded elevation at the start of each transect.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -385,12 +385,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<div class="hidden" aria-hidden="true">
-<span class="glightbox-desc lightbox-desc-1">Relative sea level change from 2023 for three scenarios of sea level rise in the Tampa Bay region.</span>
-<span class="glightbox-desc lightbox-desc-2">Projected relative sea level rise in 2100 for three scenarios by CCHA transect. Assumes no accretion nor inland migration.</span>
-<span class="glightbox-desc lightbox-desc-3">Percent of CCHA transect inundated from 2023 to 2100 for three scenarios. Estimated year of inundation for each scenario is shown on the bottom of each facet. Assumes no accretion nor inland migration.</span>
-<span class="glightbox-desc lightbox-desc-4">Percent of CCHA zones inundated from 2023 to 2100 for three scenarios. Estimated year of inundation for each scenario is shown on the bottom of each facet. Assumes no accretion nor inland migration.</span>
-</div>
 
 </main>
 <!-- /main column -->
@@ -555,12 +549,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       if (window.Quarto?.typesetMath) {
         window.Quarto.typesetMath(note);
       }
-      // TODO in 1.5, we should make sure this works without a callout special case
-      if (note.classList.contains("callout")) {
-        return note.outerHTML;
-      } else {
-        return note.innerHTML;
-      }
+      return note.innerHTML;
     }
   }
   for (var i=0; i<xrefs.length; i++) {
@@ -782,7 +771,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 });
 </script>
 </div> <!-- /content -->
-<script>var lightboxQuarto = GLightbox({"selector":".lightbox","closeEffect":"zoom","descPosition":"bottom","openEffect":"zoom","loop":false});
+<script>var lightboxQuarto = GLightbox({"selector":".lightbox","openEffect":"zoom","loop":false,"descPosition":"bottom","closeEffect":"zoom"});
 window.onload = () => {
   lightboxQuarto.on('slide_before_load', (data) => {
     const { slideIndex, slideNode, slideConfig, player, trigger } = data;
