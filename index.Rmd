@@ -36,6 +36,9 @@ load(file = here('data/vegdat.RData'))
 load(file = here('data/treedat.RData'))
 load(file = here('data/tranloc.RData'))
 
+vegdat <- vegdat %>% 
+  filter(sample != 2)
+
 thm <- theme_minimal(base_size = 16) + 
   theme(
     panel.grid.minor = element_blank() 

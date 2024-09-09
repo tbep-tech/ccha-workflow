@@ -35,6 +35,9 @@ thm <- theme_minimal(base_size = 14) +
     panel.grid.minor = element_blank() 
   )
 
+vegdat <- vegdat %>% 
+  filter(sample != 2)
+
 # test args
 site <- 'Big Bend - TECO'
 sp <- 'Avicennia germinans'

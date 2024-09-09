@@ -260,26 +260,52 @@ save(eledat, file = here('data/eledat.RData'))
 
 data(eledat)
 
-# raw data
+# raw data, phase 1 and 3
 tmpfile <- tempfile(fileext = '.xlsx')
 drive_download(
   as_id("https://docs.google.com/spreadsheets/d/1ME0TerfTWLEsOvdOZ95SaXPSGeVZr2aV/edit?gid=974034719#gid=974034719"),
   path = tmpfile, 
   overwrite = TRUE, 
   type = "xlsx")
-vegraw <- read_excel(tmpfile, sheet = 'Transect vegetation', col_types = c('numeric', 'date', 'text', 'text', 'text', 'numeric', 'text', 'numeric', 'text', 'text', 'text'))
+vegraw1 <- read_excel(tmpfile, sheet = 'Transect vegetation', col_types = c('numeric', 'date', 'text', 'text', 'text', 'numeric', 'text', 'numeric', 'text', 'text', 'text'))
 zonraw <- read_excel(tmpfile, sheet = 'Transition locations', col_types = 'text')
 unlink(tmpfile)
 
+# raw data, phase 1 and 3
+tmpfile <- tempfile(fileext = '.xlsx')
+drive_download(
+  as_id("https://docs.google.com/spreadsheets/d/1x_ytLD6ro--QzcCClnDvFC04m7PmbVbtReVQkNktyd4/edit?gid=974034719#gid=974034719"),
+  path = tmpfile, 
+  overwrite = TRUE, 
+  type = "xlsx")
+vegraw2 <- read_excel(tmpfile, sheet = 'AllVeg', col_types = c('text', 'numeric', 'date', 'text', 'text', 'numeric', 'text', 'text', 'numeric'))
+unlink(tmpfile)
+
+vegraw2b <- vegraw2 %>% 
+  filter(Sample_Set == 2) %>% 
+  select(
+    Phase = Sample_Set, 
+    Date,
+    Site, 
+    Zone_name,
+    Zone, Meter,
+    Vegetation_species,
+    pcent_basal_cover = Percent_Basal_Cover
+  ) %>% 
+  mutate(Date = as.Date(Date))
+
 # combine, minor data edits
-vegdat <- vegraw %>% 
+vegdat <- vegraw1 %>% 
+  mutate(
+    Date = as.Date(Date)
+  ) %>% 
+  bind_rows(vegraw2b) %>% 
   rename(
     species = Vegetation_species, 
     sample = Phase
   ) %>% 
   rename_all(tolower) %>%  
   mutate(
-    date = as.Date(date),
     species = case_when(
       species == 'Acrostichum danaeifolium' ~ 'Acrostichum danaefolium', 
       species == 'Baccahris sp.' ~ 'Baccharis sp.', 
@@ -314,23 +340,23 @@ vegdat <- vegraw %>%
     ),
     zone_name_simp = case_when( # follows data/raw/vegdatele.csv from KR
       zone_name %in% c("Mangrove Fringe", "Immature Mangrove Fringe", "Tidal Creek", 
-                       "Tidal creek", "YM",
+                       "Tidal creek", "YM", "Mangrove Mix",
                        "Mangrove", "Short mangrove", "Mangrove mix", "MF", 
-                       "Immature mangrove fringe", "Mangrove fringe") ~ "Mangrove",
+                       "Immature mangrove fringe", "Mangrove fringe") ~                                 "Mangrove",
       zone_name %in% c("Brazilian Pepper Berm", "Brazilian pepper berm", "BPB", "Maytenus phyllanthoides", 
-                       "Conocarpus erectus", "Schinus terebinthifolius") ~ "Salt-tolerant trees",
+                       "Conocarpus erectus", "Schinus terebinthifolius", "Schinus terebinthifolia") ~   "Salt-tolerant trees",
       zone_name %in% c("Salt Marsh", "Juncus Marsh", "Spartina patens", "RF",
-                       "Borrichia frutescens", "Juncus roemerianus", 
+                       "Borrichia frutescens", "Juncus roemerianus", "Juncus marsh", 
                        "Spartina alterniflora", "Juncus transition", 
-                       "Transitional marsh", "SB") ~ "Salt marsh",
-      zone_name %in% c("Salt Barren", "HT", "S", "ST", "Tidal Mud Flat", 
-                       "Salt barren", "Salt barren by mangrove fringe", 
-                       "Unvegetated salt barren", "High salt barren") ~ "Salt barren",
+                       "Transitional marsh", "SB") ~                                                    "Salt marsh",
+      zone_name %in% c("Salt Barren", "HT", "S", "ST", "Tidal Mud Flat", "Salt Barren Transition", 
+                       "Salt barren", "Salt barren by mangrove fringe", "Unvegetated Salt Barren",
+                       "Unvegetated salt barren", "High salt barren", "High Salt Barren") ~             "Salt barren",
       zone_name %in% c("Transitional Wetland", "Transitional wetland", "Upland transition", 
                        "FWMT", "Iva frutescens", "Coastal upland (transition)", 
-                       "Coastal upland transition", "Dead trees") ~ "Upland transition",
-      zone_name %in% c("U", "Upland", "Coastal Upland", "Coastal upland") ~ "Coastal upland",
-      zone_name %in% c("Channel", "FWP", "Water body", "Pond") ~ "Water body",
+                       "Coastal upland transition", "Dead trees", "Transitional") ~                     "Upland transition",
+      zone_name %in% c("U", "Upland", "Coastal Upland", "Coastal upland") ~                             "Coastal upland",
+      zone_name %in% c("Channel", "FWP", "Pond", "Fresh Water Pond") ~                                  "Water body",
       TRUE ~ zone_name  # Default case
     )
   ) %>% 
@@ -353,6 +379,7 @@ eledatnogeo <- eledat %>%
 
 # join site meter data with elevation data, interpolate
 interpele <- vegdat %>% 
+  filter(sample != 2) %>% # dont do this for second round of sampling
   select(sample, site,  meter) %>% 
   unique %>% 
   group_by(sample, site) %>% 
@@ -428,10 +455,24 @@ zondat <- zonraw %>%
   distinct() %>% 
   filter(!zone_name == 'End')
 
-# join correct zone names to vegdat  
+# join correct zone names to vegdat, remove zone names from phase 2 
 vegdat <- vegdat %>% 
-  left_join(zondat, by = c('site', 'zone'))
-
+  left_join(zondat, by = c('site', 'zone')) %>% 
+  mutate(
+    zone = case_when(
+      sample == 2 ~ NA_character_,
+      T ~ zone
+    ),
+    zone_name = case_when(
+      sample == 2 ~ NA_character_,
+      T ~ zone_name
+    ),
+    zone_name_simp = case_when(
+      sample == 2 ~ NA_character_,
+      T ~ zone_name_simp
+    )
+  )
+  
 save(vegdat, file = here('data/vegdat.RData'))
 
 # get tree data -----------------------------------------------------------
