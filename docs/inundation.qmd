@@ -1,5 +1,5 @@
 ---
-title: "Estimated inundation time by CCHA transct"
+title: "Estimated inundation time by CCHA transect"
 format: 
   html:
     code-fold: true
