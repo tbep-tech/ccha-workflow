@@ -1,0 +1,330 @@
+---
+title: "Zone predictions for phase 2 CCHA sampling"
+format: 
+  html:
+    code-fold: true
+editor: source
+lightbox: true
+
+execute: 
+  warning: false
+  message: false
+  echo: true
+---
+
+```{r}
+#| label: setup
+library(tidyverse)
+library(randomForest)
+library(janitor)
+library(caret)
+library(zoo)
+library(here)
+
+load(file = here('data/vegdat.RData'))
+
+# colors
+cols <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+levs <- vegdat %>% 
+  select(zone_name_simp) %>% 
+  distinct() %>% 
+  arrange(zone_name_simp) %>% 
+  na.omit() %>% 
+  pull()
+colin <- cols(length(levs))
+names(colin) <- levs
+
+# smoothing function for prediction post-processing
+smooth_fun <- function(prds, win = 3, align = 'left', fillna = F){
+  
+  levs <- levels(prds)
+  prds <- as.character(prds)
+  out <- rollapply(
+    prds, 
+    width = win, FUN = function(x){
+      names(sort(table(x), decreasing = TRUE)[1])
+    }, 
+    align = align, fill = NA)
+  
+  if(fillna)
+    out <- ifelse(is.na(out), prds, out)
+  
+  out <- factor(out, levels = levs)
+  
+  return(out)
+  
+}
+
+# species in all three samples
+shrspp <- vegdat %>% 
+  select(sample, species) %>% 
+  distinct() %>% 
+  mutate(
+    present = 1
+  ) %>% 
+  pivot_wider(names_from = sample, values_from = present, values_fill = 0) %>% 
+  mutate(
+    allpresent = ifelse(`1` + `2` + `3` == 3, 1, 0)
+  ) %>% 
+  filter(allpresent == 1) %>% 
+  pull(species) %>% 
+  sort()
+
+```
+
+This analysis is a proof of concept for predicting vegetation zones in phase 2 sampling, where complete vegetation plots were sampled but no zone or elevation information was recorded.  The predictions use a random forest model trained on the phase 1 data and tested on phase 3 data.  The model used species basal percent cover, meter mark, and site as predictors.  Only species shared across all three phases were included.  The model predictions compared to actual zones for phase 1 (training) and phase 3 (validation) are shown for comparison, including model confusion matrices and accuracy statistics.  Model predictions using smoothed results are also evaluated, where meter marks are assigned the majority zone within a rolling window of width 5.
+
+### Phase 1 training data
+
+```{r}
+# prep for rf, use first phase as training
+trndat <- vegdat %>% 
+  filter(species %in% shrspp) %>% 
+  filter(sample == 1) %>% 
+  select(
+    site, zone_name_simp, meter, species, pcent_basal_cover
+  ) %>% 
+  summarise(
+    pcent_basal_cover = mean(pcent_basal_cover, na.rm = T),
+    .by = c(site, zone_name_simp, meter, species)
+  ) %>% 
+  filter(!is.na(pcent_basal_cover)) %>% 
+  pivot_wider(names_from = species, values_from = pcent_basal_cover, values_fill = 0) %>% 
+  clean_names() %>% 
+  mutate_if(is.character, as.factor)
+
+# rf mod
+rfmod <- randomForest(zone_name_simp ~ ., data = trndat, importance = TRUE, ntree = 500, keep.inbag = T)
+
+# data for checking results
+trndatchk <- trndat %>% 
+  mutate(
+    zone_name_simpprd = predict(rfmod, .)
+  ) %>% 
+  select(
+    site, 
+    meter,
+    zone_name_simp,
+    zone_name_simpprd
+  ) %>% 
+  mutate(
+    zone_name_simpprdsmth = smooth_fun(zone_name_simpprd, align = 'center', win = 5, fillna = T),
+    .by = site
+  )
+```
+
+```{r}
+#| fig-height: 5
+#| fig-width: 8
+#| fig-cap: 'Model predictions for training data on phase 1 zones compared to actual.'
+# visualize training results
+toplo <- trndatchk %>% 
+  pivot_longer(
+    cols = -c(site, meter),
+    names_to = 'typ',
+    values_to = 'zone_name_simp'
+  ) %>% 
+  filter(!is.na(zone_name_simp)) %>% 
+  mutate(
+    typ = case_when(
+      grepl('prd$', typ) ~ 'Predicted', 
+      grepl('prdsmth$', typ) ~ 'Predicted and smoothed', 
+      T ~ 'Actual'
+    )
+  )
+
+ggplot(toplo, aes(x = meter, y = typ, color = zone_name_simp)) +
+  geom_point(size = 2) +
+  facet_wrap(~site, scales = 'free_x') +
+  scale_color_manual(values = colin) +
+  scale_y_discrete(expand = c(0.1, 0)) + 
+  theme_minimal() +
+  theme(
+    legend.position = 'top',
+    panel.grid.major.y = element_blank()
+  ) +
+  labs(
+    x = 'Meters', 
+    y = NULL, 
+    color = 'Zone name'
+  )
+```
+
+Confusion matrix and accuracy statistic for model predictions compared to actual zones (reference).
+
+```{r}
+tmp1 <- confusionMatrix(trndatchk$zone_name_simpprd, trndatchk$zone_name_simp)
+tmp1$table
+tmp1$overall['Accuracy']
+```
+
+Confusion matrix and accuracy statistic for smoothed model predictions compared to actual zones (reference).
+
+```{r}
+tmp2 <- confusionMatrix(trndatchk$zone_name_simpprdsmth, trndatchk$zone_name_simp)
+tmp2$table
+tmp2$overall['Accuracy']
+```
+
+### Phase 3 testing data
+
+```{r}
+# test dataset on phase 3
+tstdat <- vegdat %>% 
+  filter(sample == 3) %>% 
+  select(
+    site, zone_name_simp, meter, species, pcent_basal_cover
+  ) %>% 
+  summarise(
+    pcent_basal_cover = mean(pcent_basal_cover, na.rm = T),
+    .by = c(site, zone_name_simp, meter, species)
+  ) %>% 
+  pivot_wider(names_from = species, values_from = pcent_basal_cover, values_fill = 0) %>% 
+  clean_names() %>% 
+  mutate_if(is.character, as.factor)
+
+tstdatchk <- tstdat %>% 
+  mutate(
+    zone_name_simpprd = predict(rfmod, .)
+  ) %>% 
+  select(
+    site, 
+    meter,
+    zone_name_simp,
+    zone_name_simpprd
+  ) %>% 
+  mutate(
+    zone_name_simpprdsmth = smooth_fun(zone_name_simpprd, align = 'center', win = 5, fillna = T),
+    .by = site
+  )
+```
+
+```{r}
+#| fig-height: 5
+#| fig-width: 8
+#| fig-cap: 'Model predictions for testing data on phase 3 zones compared to actual.'
+# visualize testing results
+toplo <- tstdatchk %>% 
+  pivot_longer(
+    cols = -c(site, meter),
+    names_to = 'typ',
+    values_to = 'zone_name_simp'
+  ) %>% 
+  filter(!is.na(zone_name_simp)) %>% 
+  mutate(
+    typ = case_when(
+      grepl('prd$', typ) ~ 'Predicted', 
+      grepl('prdsmth$', typ) ~ 'Predicted and smoothed', 
+      T ~ 'Actual'
+    )
+  )
+
+ggplot(toplo, aes(x = meter, y = typ, color = zone_name_simp)) +
+  geom_point(size = 2) +
+  facet_wrap(~site, scales = 'free_x') +
+  scale_color_manual(values = colin) +
+  scale_y_discrete(expand = c(0.1, 0)) + 
+  theme_minimal() +
+  theme(
+    legend.position = 'top',
+    panel.grid.major.y = element_blank()
+  ) +
+  labs(
+    x = 'Meters', 
+    y = NULL, 
+    color = 'Zone name'
+  )
+```
+
+Confusion matrix and accuracy statistic for model predictions compared to actual zones (reference).
+
+```{r}
+tmp1 <- confusionMatrix(tstdatchk$zone_name_simpprd, tstdatchk$zone_name_simp)
+tmp1$table
+tmp1$overall['Accuracy']
+```
+
+Confusion matrix and accuracy statistic for smoothed model predictions compared to actual zones (reference).
+
+```{r}
+tmp2 <- confusionMatrix(tstdatchk$zone_name_simpprdsmth, tstdatchk$zone_name_simp)
+tmp2$table
+tmp2$overall['Accuracy']
+```
+
+### Phase 2 predictions
+
+```{r}
+# predict sample 2
+toprd <- vegdat %>% 
+  filter(sample == 2) %>% 
+  select(
+    site, zone_name_simp, meter, species, pcent_basal_cover
+  ) %>% 
+  summarise(
+    pcent_basal_cover = mean(pcent_basal_cover, na.rm = T),
+    .by = c(site, zone_name_simp, meter, species)
+  ) %>% 
+  pivot_wider(names_from = species, values_from = pcent_basal_cover, values_fill = 0) %>% 
+  clean_names() %>% 
+  mutate_if(is.character, as.factor)
+
+tomrg <- toprd %>% 
+  mutate(
+    sample = 2,
+    zone_name_simp2 = predict(rfmod, newdata = .)
+  ) %>% 
+  mutate(
+    zone_name_simp2 = smooth_fun(zone_name_simp2, align = 'center', win = 5, fillna = T),
+    .by = site
+  ) %>%
+  select(site, sample, meter, zone_name_simp2) %>% 
+  mutate(
+    site = as.character(site),
+    zone_name_simp2 = as.character(zone_name_simp2)
+  ) 
+
+vegdat2 <- vegdat %>% 
+  group_nest(site, sample, zone_name_simp, meter) %>% 
+  left_join(tomrg, by = c('site', 'sample', 'meter')) %>% 
+  mutate(
+    zone_name_simp = case_when(
+      is.na(zone_name_simp) ~ zone_name_simp2, 
+      T ~ zone_name_simp
+    )
+  ) %>% 
+  select(-zone_name_simp2) %>%
+  unnest('data') %>% 
+  arrange(sample, site, meter, species)
+```
+
+```{r}
+#| fig-height: 5
+#| fig-width: 8
+#| fig-cap: 'Site zones for all phases.  Phases 1 and 3 are actual and phase 2 is predicted and smoothed.'
+toplo <- vegdat2 %>% 
+  select(site, sample, zone_name_simp, meter) %>%
+  distinct() %>% 
+  mutate(
+    sample = factor(sample)
+  )
+
+ggplot(toplo, aes(x = meter, y = sample, color = zone_name_simp)) +
+  geom_point(size = 2) +
+  facet_wrap(~site, scales = 'free_x') +
+  scale_color_manual(values = colin) +
+  scale_y_discrete(expand = c(0.1, 0)) + 
+  theme_minimal() +
+  theme(
+    legend.position = 'top',
+    panel.grid.major.y = element_blank()
+  ) +
+  labs(
+    x = 'Meters', 
+    y = 'Sample', 
+    color = 'Zone name'
+  )
+```
