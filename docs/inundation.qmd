@@ -3,9 +3,19 @@ title: "Estimated inundation time by CCHA transect"
 format: 
   html:
     code-fold: true
+    css: styles.css
 editor: source
 lightbox: true
 
+include-in-header:
+  - text: |
+      <style>
+      .panel-tabset > .nav-tabs,
+      .panel-tabset > .tab-content {
+        border: none;
+      }
+      </style>
+      
 execute: 
   warning: false
   message: false
@@ -191,6 +201,192 @@ zoneinund <- jndat %>%
 
 ```
 
+::: {.panel-tabset}
+
+## 2030 - HMP targets
+
+```{r}
+#| fig-height: 6
+#| fig-width: 8
+#| fig-cap: "Projected relative sea level rise in 2030 for three scenarios by CCHA transect. Assumes no accretion nor inland migration."
+toplo1 <- jndat %>% 
+  filter(yrs %in% c(2030))
+
+ggplot(toplo1, aes(x = Meter, y = Elevation_NAVD88)) + 
+  geom_line() +
+  facet_wrap(~Site, scales = 'free_x') +
+  geom_hline(aes(yintercept = MSL_m, color = scenario), linewidth = 1) +
+  scale_color_manual(values = scencols) +
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    legend.position = 'top'
+  ) + 
+  labs(
+    x = 'Transect distance (m)',
+    y = 'Elevation (m)',
+    color = 'Scenario'
+  )
+```
+
+```{r}
+#| fig-height: 6
+#| fig-width: 8
+#| fig-cap: "Percent of CCHA transect inundated from 2023 to 2030 for three scenarios. Horizontal dashed lines show the estimated percent at 2030. Assumes no accretion nor inland migration."
+maxyr <- 2030
+toplo2 <- inund %>% 
+  filter(yrs <= maxyr)
+perinund <- toplo2 %>% 
+  filter(yrs == maxyr) %>% 
+  mutate(
+    labs = paste0(round(100 * perinund, 0), '%')
+  )
+
+ggplot(toplo2, aes(x = yrs, y = perinund, color = scenario, group = scenario)) +
+  geom_line(linewidth = 1) +
+  geom_segment(data = perinund, aes(xend = yrs, y = perinund, yend = perinund, color = scenario), linetype = 'dashed', x = 2023) +
+  facet_wrap(~Site) +
+  scale_color_manual(values = scencols) +
+  scale_y_continuous(labels = scales::percent) +
+  coord_cartesian(ylim = c(0, 1)) + 
+  theme_minimal() + 
+  theme(
+    panel.grid.minor = element_blank(),
+    legend.position = 'top',
+    axis.text.x = element_text(angle = 40, hjust = 1, size = 8)
+  ) + 
+  labs(
+    x = 'Year',
+    y = 'Percent inundated',
+    color = 'Scenario'
+  )
+```
+
+```{r}
+#| fig-height: 6
+#| fig-width: 8
+#| fig-cap: "Percent of CCHA zones inundated from 2023 to 2030 for three scenarios. Horizontal dashed lines show the estimated percent at 2030. Assumes no accretion nor inland migration."
+maxyr <- 2030
+toplo2 <- zoneinund %>% 
+  filter(yrs <= maxyr)
+perinund <- toplo2 %>% 
+  filter(yrs == maxyr) %>% 
+  mutate(
+    labs = paste0(round(100 * perinund, 0), '%')
+  )
+ggplot(toplo2, aes(x = yrs, y = perinund, color = scenario, group = scenario)) +
+  geom_line(linewidth = 1) +
+  geom_segment(data = perinund, aes(xend = yrs, y = perinund, yend = perinund, color = scenario), linetype = 'dashed', x = 2023) +
+  facet_wrap(~Simplified_zone_name) +
+  scale_color_manual(values = scencols) +
+  scale_y_continuous(labels = scales::percent) +
+  coord_cartesian(ylim = c(0, 1)) +
+  theme_minimal() + 
+  theme(
+    panel.grid.minor = element_blank(),
+    legend.position = 'top',
+    axis.text.x = element_text(angle = 40, hjust = 1, size = 8)
+  ) + 
+  labs(
+    x = 'Year',
+    y = 'Percent inundated',
+    color = 'Scenario'
+  )
+```
+
+## 2050 - HMP goals
+
+```{r}
+#| fig-height: 6
+#| fig-width: 8
+#| fig-cap: "Projected relative sea level rise in 2050 for three scenarios by CCHA transect. Assumes no accretion nor inland migration."
+toplo1 <- jndat %>% 
+  filter(yrs %in% c(2050))
+
+ggplot(toplo1, aes(x = Meter, y = Elevation_NAVD88)) + 
+  geom_line() +
+  facet_wrap(~Site, scales = 'free_x') +
+  geom_hline(aes(yintercept = MSL_m, color = scenario), linewidth = 1) +
+  scale_color_manual(values = scencols) +
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    legend.position = 'top'
+  ) + 
+  labs(
+    x = 'Transect distance (m)',
+    y = 'Elevation (m)',
+    color = 'Scenario'
+  )
+```
+
+```{r}
+#| fig-height: 6
+#| fig-width: 8
+#| fig-cap: "Percent of CCHA transect inundated from 2023 to 2050 for three scenarios. Horizontal dashed lines show the estimated percent at 2050. Assumes no accretion nor inland migration."
+maxyr <- 2050
+toplo2 <- inund %>% 
+  filter(yrs <= maxyr)
+perinund <- toplo2 %>% 
+  filter(yrs == maxyr) %>% 
+  mutate(
+    labs = paste0(round(100 * perinund, 0), '%')
+  )
+
+ggplot(toplo2, aes(x = yrs, y = perinund, color = scenario, group = scenario)) +
+  geom_line(linewidth = 1) +
+  geom_segment(data = perinund, aes(xend = yrs, y = perinund, yend = perinund, color = scenario), linetype = 'dashed', x = 2023) +
+  facet_wrap(~Site) +
+  scale_color_manual(values = scencols) +
+  scale_y_continuous(labels = scales::percent) +
+  coord_cartesian(ylim = c(0, 1)) + 
+  theme_minimal() + 
+  theme(
+    panel.grid.minor = element_blank(),
+    legend.position = 'top',
+    axis.text.x = element_text(angle = 40, hjust = 1, size = 8)
+  ) + 
+  labs(
+    x = 'Year',
+    y = 'Percent inundated',
+    color = 'Scenario'
+  )
+```
+
+```{r}
+#| fig-height: 6
+#| fig-width: 8
+#| fig-cap: "Percent of CCHA zones inundated from 2023 to 2050 for three scenarios. Horizontal dashed lines show the estimated percent at 2050. Assumes no accretion nor inland migration."
+maxyr <- 2050
+toplo2 <- zoneinund %>% 
+  filter(yrs <= maxyr)
+perinund <- toplo2 %>% 
+  filter(yrs == maxyr) %>% 
+  mutate(
+    labs = paste0(round(100 * perinund, 0), '%')
+  )
+ggplot(toplo2, aes(x = yrs, y = perinund, color = scenario, group = scenario)) +
+  geom_line(linewidth = 1) +
+  geom_segment(data = perinund, aes(xend = yrs, y = perinund, yend = perinund, color = scenario), linetype = 'dashed', x = 2023) +
+  facet_wrap(~Simplified_zone_name) +
+  scale_color_manual(values = scencols) +
+  scale_y_continuous(labels = scales::percent) +
+  coord_cartesian(ylim = c(0, 1)) +
+  theme_minimal() + 
+  theme(
+    panel.grid.minor = element_blank(),
+    legend.position = 'top',
+    axis.text.x = element_text(angle = 40, hjust = 1, size = 8)
+  ) + 
+  labs(
+    x = 'Year',
+    y = 'Percent inundated',
+    color = 'Scenario'
+  )
+```
+
+## 2021 
+
 ```{r}
 #| fig-height: 6
 #| fig-width: 8
@@ -269,3 +465,5 @@ ggplot(zoneinund, aes(x = yrs, y = perinund, color = scenario, group = scenario)
     color = 'Scenario'
   )
 ```
+
+:::
