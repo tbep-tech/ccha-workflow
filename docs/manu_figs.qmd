@@ -18,10 +18,11 @@ library(tidyverse)
 library(patchwork)
 
 load(file = here::here('data/tempdat.RData'))
+vegdatelezcomp <- read.csv(here::here('data/raw/vegdatelezcomp.csv'))
 ```
 
 
-```{r}
+```{r tempplot}
 #| fig-height: 4
 #| fig-width: 7
 #| fig-cap: "Annual minimum daily air temperature and freezing days in Tampa, Florida (1980 - 2024). Top panel shows annual minimum daily air temperature with dashed line indicating mangrove cold tolerance threshold [@cavanaugh2014]. Bottom panel shows total number of days below freezing (light blue) and longest consecutive cold spell (dark blue) per year. Air temperature data from Tampa International Airport (NOAA NCEI station USW00012842)"
@@ -90,6 +91,113 @@ p <- p1 + p2 +
   plot_layout(ncol = 1, height = c(2, 1), guides = 'collect') &
   theme(legend.position = 'bottom')
 
+p
+```
+
+
+```{r slrzones}
+#| fig-height: 6
+#| fig-width: 9
+#| fig-cap: "Vegetation zones and elevations along transects by sites in Tampa Bay, Florida. Black lines indicate projected sea level rise by 2060 under high and intermediate scenarios [@sweet2022]."
+
+# # accretion rates, based on RTK elevation diff per year  
+# accrt <- vegdatele %>%
+#   mutate(
+#     yr = year(mdy(Date))
+#   ) %>% 
+#   summarise(
+#     meanele = mean(Elevation_NAVD88, na.rm = T), 
+#     .by = c(Site, yr)
+#   ) %>% 
+#   summarise(
+#     elediff = diff(meanele), 
+#     yrdiff = diff(yr), 
+#     .by = Site
+#   ) %>% 
+#   mutate(
+#     accrate = elediff / yrdiff
+#   ) %>% 
+#   select(Site, accrate)
+
+ele <- vegdatelezcomp %>% 
+  filter(Sample_set == 3) %>% 
+  select(Site, Simplified_zone_name, Meter, Elevation_MTL) %>% 
+  distinct() |> 
+  mutate(
+    zone_group = cumsum(Simplified_zone_name != lag(Simplified_zone_name, default = first(Simplified_zone_name))) + 1,
+    .by = Site
+  )
+
+interpolate_transect <- function(df) {
+  
+  # Process each site separately
+  df_interpolated <- df %>%
+    group_by(Site) %>%
+    do({
+      site_data <- .
+      
+      # Create the new meter sequence at 0.25m intervals
+      meter_seq <- seq(from = min(site_data$Meter), 
+                      to = max(site_data$Meter), 
+                      by = 0.1)
+      
+      # Create a new dataframe with the interpolated meter values
+      new_df <- data.frame(
+        Site = unique(site_data$Site),
+        Meter = meter_seq
+      )
+      
+      # Interpolate elevation using linear interpolation
+      new_df$Elevation_MTL <- approx(x = site_data$Meter, 
+                                     y = site_data$Elevation_MTL, 
+                                     xout = meter_seq, 
+                                     method = "linear")$y
+      
+      # For categorical variables, use "last observation carried forward"
+      # This assumes zones are continuous until they change
+      
+      # First, create a mapping of meter to zone values
+      zone_df <- site_data %>%
+        select(Meter, Simplified_zone_name, zone_group)
+      
+      # Merge and fill forward the categorical values
+      new_df <- new_df %>%
+        left_join(zone_df, by = "Meter") %>%
+        arrange(Meter) %>%
+        fill(Simplified_zone_name, zone_group, .direction = "down")
+      
+      new_df
+    }) %>%
+    ungroup()
+  
+  return(df_interpolated)
+}
+
+toplo <- interpolate_transect(ele) 
+
+toplo2 <- toplo |> 
+  unite(zone_group, c('Site', 'zone_group'), sep = '_')
+
+lns <- tibble(
+  Scenario = c('High SLR 2060', 'Intermediate SLR 2060'),
+  elev = c(0.73, 0.48)
+)
+
+p <- ggplot(toplo, aes(x = Meter, y = Elevation_MTL, color = Simplified_zone_name, group = zone_group)) +
+  geom_line(data = toplo2, aes(x = Meter, y = Elevation_MTL, group = 
+    zone_group, color = Simplified_zone_name), alpha = 0.2) +
+  geom_hline(data = lns, aes(yintercept = elev, linetype = Scenario), color = 'black') +
+  geom_line(size = 1) + 
+  facet_wrap(~ Site) +
+  theme_minimal() +
+#   theme(
+#     legend.position = "bottom"
+#   ) +
+  labs(
+    x = "Distance from water (m)", 
+    y = "Elevation (m above MTL)", 
+    color = "Vegetation Zone"
+  )
 p
 ```
 

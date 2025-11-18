@@ -128,7 +128,8 @@ div.csl-indent {
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="at">file =</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">'data/tempdat.RData'</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="at">file =</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">'data/tempdat.RData'</span>))</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>vegdatelezcomp <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">'data/raw/vegdatelezcomp.csv'</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <div class="cell">
@@ -203,8 +204,120 @@ div.csl-indent {
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><a href="manu_figs_files/figure-html/unnamed-chunk-1-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1" title="Annual minimum daily air temperature and freezing days in Tampa, Florida (1980 - 2024). Top panel shows annual minimum daily air temperature with dashed line indicating mangrove cold tolerance threshold [@cavanaugh2014]. Bottom panel shows total number of days below freezing (light blue) and longest consecutive cold spell (dark blue) per year. Air temperature data from Tampa International Airport (NOAA NCEI station USW00012842)"><img src="manu_figs_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672" alt="Annual minimum daily air temperature and freezing days in Tampa, Florida (1980 - 2024). Top panel shows annual minimum daily air temperature with dashed line indicating mangrove cold tolerance threshold (Cavanaugh et al. 2014). Bottom panel shows total number of days below freezing (light blue) and longest consecutive cold spell (dark blue) per year. Air temperature data from Tampa International Airport (NOAA NCEI station USW00012842)"></a></p>
+<p><a href="manu_figs_files/figure-html/tempplot-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1" title="Annual minimum daily air temperature and freezing days in Tampa, Florida (1980 - 2024). Top panel shows annual minimum daily air temperature with dashed line indicating mangrove cold tolerance threshold [@cavanaugh2014]. Bottom panel shows total number of days below freezing (light blue) and longest consecutive cold spell (dark blue) per year. Air temperature data from Tampa International Airport (NOAA NCEI station USW00012842)"><img src="manu_figs_files/figure-html/tempplot-1.png" class="img-fluid figure-img" width="672" alt="Annual minimum daily air temperature and freezing days in Tampa, Florida (1980 - 2024). Top panel shows annual minimum daily air temperature with dashed line indicating mangrove cold tolerance threshold (Cavanaugh et al. 2014). Bottom panel shows total number of days below freezing (light blue) and longest consecutive cold spell (dark blue) per year. Air temperature data from Tampa International Airport (NOAA NCEI station USW00012842)"></a></p>
 <figcaption>Annual minimum daily air temperature and freezing days in Tampa, Florida (1980 - 2024). Top panel shows annual minimum daily air temperature with dashed line indicating mangrove cold tolerance threshold <span class="citation" data-cites="cavanaugh2014">(<a href="#ref-cavanaugh2014" role="doc-biblioref">Cavanaugh et al. 2014</a>)</span>. Bottom panel shows total number of days below freezing (light blue) and longest consecutive cold spell (dark blue) per year. Air temperature data from Tampa International Airport (NOAA NCEI station USW00012842)</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># # accretion rates, based on RTK elevation diff per year  </span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># accrt &lt;- vegdatele %&gt;%</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   mutate(</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">#     yr = year(mdy(Date))</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">#   ) %&gt;% </span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">#   summarise(</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">#     meanele = mean(Elevation_NAVD88, na.rm = T), </span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">#     .by = c(Site, yr)</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co">#   ) %&gt;% </span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">#   summarise(</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co">#     elediff = diff(meanele), </span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">#     yrdiff = diff(yr), </span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">#     .by = Site</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">#   ) %&gt;% </span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co">#   mutate(</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co">#     accrate = elediff / yrdiff</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co">#   ) %&gt;% </span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co">#   select(Site, accrate)</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>ele <span class="ot">&lt;-</span> vegdatelezcomp <span class="sc">%&gt;%</span> </span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Sample_set <span class="sc">==</span> <span class="dv">3</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(Site, Simplified_zone_name, Meter, Elevation_MTL) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">zone_group =</span> <span class="fu">cumsum</span>(Simplified_zone_name <span class="sc">!=</span> <span class="fu">lag</span>(Simplified_zone_name, <span class="at">default =</span> <span class="fu">first</span>(Simplified_zone_name))) <span class="sc">+</span> <span class="dv">1</span>,</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">.by =</span> Site</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>interpolate_transect <span class="ot">&lt;-</span> <span class="cf">function</span>(df) {</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Process each site separately</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>  df_interpolated <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(Site) <span class="sc">%&gt;%</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    <span class="fu">do</span>({</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>      site_data <span class="ot">&lt;-</span> .</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Create the new meter sequence at 0.25m intervals</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>      meter_seq <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="at">from =</span> <span class="fu">min</span>(site_data<span class="sc">$</span>Meter), </span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>                      <span class="at">to =</span> <span class="fu">max</span>(site_data<span class="sc">$</span>Meter), </span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>                      <span class="at">by =</span> <span class="fl">0.1</span>)</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Create a new dataframe with the interpolated meter values</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>      new_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>        <span class="at">Site =</span> <span class="fu">unique</span>(site_data<span class="sc">$</span>Site),</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>        <span class="at">Meter =</span> meter_seq</span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Interpolate elevation using linear interpolation</span></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>      new_df<span class="sc">$</span>Elevation_MTL <span class="ot">&lt;-</span> <span class="fu">approx</span>(<span class="at">x =</span> site_data<span class="sc">$</span>Meter, </span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>                                     <span class="at">y =</span> site_data<span class="sc">$</span>Elevation_MTL, </span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>                                     <span class="at">xout =</span> meter_seq, </span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>                                     <span class="at">method =</span> <span class="st">"linear"</span>)<span class="sc">$</span>y</span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>      <span class="co"># For categorical variables, use "last observation carried forward"</span></span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>      <span class="co"># This assumes zones are continuous until they change</span></span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>      <span class="co"># First, create a mapping of meter to zone values</span></span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a>      zone_df <span class="ot">&lt;-</span> site_data <span class="sc">%&gt;%</span></span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>        <span class="fu">select</span>(Meter, Simplified_zone_name, zone_group)</span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Merge and fill forward the categorical values</span></span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>      new_df <span class="ot">&lt;-</span> new_df <span class="sc">%&gt;%</span></span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>        <span class="fu">left_join</span>(zone_df, <span class="at">by =</span> <span class="st">"Meter"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>        <span class="fu">arrange</span>(Meter) <span class="sc">%&gt;%</span></span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a>        <span class="fu">fill</span>(Simplified_zone_name, zone_group, <span class="at">.direction =</span> <span class="st">"down"</span>)</span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>      new_df</span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a>    }) <span class="sc">%&gt;%</span></span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ungroup</span>()</span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(df_interpolated)</span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>toplo <span class="ot">&lt;-</span> <span class="fu">interpolate_transect</span>(ele) </span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>toplo2 <span class="ot">&lt;-</span> toplo <span class="sc">|&gt;</span> </span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unite</span>(zone_group, <span class="fu">c</span>(<span class="st">'Site'</span>, <span class="st">'zone_group'</span>), <span class="at">sep =</span> <span class="st">'_'</span>)</span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a>lns <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>  <span class="at">Scenario =</span> <span class="fu">c</span>(<span class="st">'High SLR 2060'</span>, <span class="st">'Intermediate SLR 2060'</span>),</span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a>  <span class="at">elev =</span> <span class="fu">c</span>(<span class="fl">0.73</span>, <span class="fl">0.48</span>)</span>
+<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(toplo, <span class="fu">aes</span>(<span class="at">x =</span> Meter, <span class="at">y =</span> Elevation_MTL, <span class="at">color =</span> Simplified_zone_name, <span class="at">group =</span> zone_group)) <span class="sc">+</span></span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data =</span> toplo2, <span class="fu">aes</span>(<span class="at">x =</span> Meter, <span class="at">y =</span> Elevation_MTL, <span class="at">group =</span> </span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>    zone_group, <span class="at">color =</span> Simplified_zone_name), <span class="at">alpha =</span> <span class="fl">0.2</span>) <span class="sc">+</span></span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">data =</span> lns, <span class="fu">aes</span>(<span class="at">yintercept =</span> elev, <span class="at">linetype =</span> Scenario), <span class="at">color =</span> <span class="st">'black'</span>) <span class="sc">+</span></span>
+<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> Site) <span class="sc">+</span></span>
+<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a><span class="co">#   theme(</span></span>
+<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a><span class="co">#     legend.position = "bottom"</span></span>
+<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a><span class="co">#   ) +</span></span>
+<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Distance from water (m)"</span>, </span>
+<span id="cb3-96"><a href="#cb3-96" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Elevation (m above MTL)"</span>, </span>
+<span id="cb3-97"><a href="#cb3-97" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"Vegetation Zone"</span></span>
+<span id="cb3-98"><a href="#cb3-98" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb3-99"><a href="#cb3-99" aria-hidden="true" tabindex="-1"></a>p</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><a href="manu_figs_files/figure-html/slrzones-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2" title="Vegetation zones and elevations along transects by sites in Tampa Bay, Florida. Black lines indicate projected sea level rise by 2060 under high and intermediate scenarios [@sweet2022]."><img src="manu_figs_files/figure-html/slrzones-1.png" class="img-fluid figure-img" width="864" alt="Vegetation zones and elevations along transects by sites in Tampa Bay, Florida. Black lines indicate projected sea level rise by 2060 under high and intermediate scenarios (Sweet et al. 2022)."></a></p>
+<figcaption>Vegetation zones and elevations along transects by sites in Tampa Bay, Florida. Black lines indicate projected sea level rise by 2060 under high and intermediate scenarios <span class="citation" data-cites="sweet2022">(<a href="#ref-sweet2022" role="doc-biblioref">Sweet et al. 2022</a>)</span>.</figcaption>
 </figure>
 </div>
 </div>
@@ -217,6 +330,9 @@ div.csl-indent {
 <div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
 <div id="ref-cavanaugh2014" class="csl-entry" role="listitem">
 Cavanaugh, Kyle C, James R Kellner, Alexander J Forde, Daniel S Gruner, John D Parker, Wilfrid Rodriguez, and Ilka C Feller. 2014. <span>“Poleward Expansion of Mangroves Is a Threshold Response to Decreased Frequency of Extreme Cold Events.”</span> <em>Proceedings of the National Academy of Sciences</em> 111 (2): 723–27. <a href="https://doi.org/10.1073/pnas.1315800111">https://doi.org/10.1073/pnas.1315800111</a>.
+</div>
+<div id="ref-sweet2022" class="csl-entry" role="listitem">
+Sweet, William V, Benjamin D Hamlington, Robert E Kopp, Christopher P Weaver, Patrick L Barnard, David Bekaert, William Brooks, et al. 2022. <span>“Global and Regional Sea Level Rise Scenarios for the <span>U</span>nited <span>S</span>tates: Updated Mean Projections and Extreme Weather Level Probabilities Along US Coastlines.”</span> NOS 01. Silver Spring, MD: National Oceanic; Atmospheric Administration, National Ocean Service.
 </div>
 </div></section></div></main>
 <!-- /main column -->
