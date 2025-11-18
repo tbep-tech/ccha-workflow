@@ -532,9 +532,8 @@ save(tranloc, file = here('data/tranloc.RData'))
 
 noaa_key <- Sys.getenv('NOAA_KEY')
 
-yrs <- 2023:2024
+yrs <- 1940:2024
 
-all_temps <- lapply(yrs, function(y){
-  cat('Getting year:', y, '\n')
-  gettemp_fun(yr = y, noaa_key = noaa_key)
-})
+tempdat <- gettemp_fun(yrs = yrs, noaa_key = noaa_key)
+
+save(tempdat, file = here::here('data/tempdat.RData'))

@@ -870,47 +870,79 @@ capwords <- function(s, strict = FALSE) {
 
 # function to get daily temperature data from NOAA API
 # default to tampa international
-gettemp_fun <- function(sta = 'USW00012842', var = c('TMIN', 'TMAX', 'TAVG'), yr, noaa_key){
+gettemp_fun <- function(sta = 'USW00012842', var = c('TMIN', 'TMAX', 'TAVG'), yrs, noaa_key, 
+  ntry = 5, timeout = 3){
 
   var <- match.arg(var)
 
   base_url <- "https://www.ncei.noaa.gov/cdo-web/api/v2/data"
 
-  startdate <- paste0(yr, '-01-01')
-  enddate <- paste0(yr, '-12-31')
+  out <- list()
 
-  query_params <- list(
-    datasetid = 'GHCND',
-    stationid = sta,
-    datatypeid = var, 
-    startdate = startdate,
-    enddate = enddate,
-    limit = 1000,  # Increased from 400 to get more data per request
-    units = 'metric'
-  )
-
-  dat <- try({
-
-        response <- httr::GET(
-          url = base_url,
-          query = query_params,
-          httr::add_headers(token = noaa_key)
-        )
-        
-        # Check if request was successful
-        if(httr::status_code(response) != 200) {
-          stop("API request failed with status code: ", httr::status_code(response))
-        }
-        
-        # Parse the JSON response
-        content <- httr::content(response, as = "text", encoding = "UTF-8")
-        parsed_data <- jsonlite::fromJSON(content)
-        parsed_data
-      })
+  for(yr in yrs){
+    cat(yr, '\n')
     
-  if(inherits(dat, "try-error"))
-    return(NULL)
+    startdate <- paste0(yr, '-01-01')
+    enddate <- paste0(yr, '-12-31')
 
-  return(dat)
+    query_params <- list(
+      datasetid = 'GHCND',
+      stationid = paste0('GHCND:', sta),
+      datatypeid = var, 
+      startdate = startdate,
+      enddate = enddate,
+      limit = 1000,  # Increased from 400 to get more data per request
+      units = 'metric'
+    )
+
+    dat <- try({
+
+          response <- httr::GET(
+            url = base_url,
+            query = query_params,
+            httr::add_headers(token = noaa_key),
+            httr::timeout(timeout)
+          )
+
+          # Parse the JSON response
+          content <- httr::content(response, as = "text", encoding = "UTF-8")
+          parsed_data <- data.frame(jsonlite::fromJSON(content)$results)
+          parsed_data
+        }, silent = TRUE)
+      
+    tryi <- 2
+    while(tryi <= ntry & inherits(dat, "try-error")){
+
+      cat('\tattempt', tryi, '\n')
+
+      dat <- try({
+
+          response <- httr::GET(
+            url = base_url,
+            query = query_params,
+            httr::add_headers(token = noaa_key),
+            httr::timeout(timeout)
+          )
+          
+          # Parse the JSON response
+          content <- httr::content(response, as = "text", encoding = "UTF-8")
+          parsed_data <- data.frame(jsonlite::fromJSON(content)$results)
+          parsed_data
+        
+        }, silent = TRUE)
+
+      tryi <- tryi + 1
+    }
+
+    if(tryi == ntry){
+        cat('Failed...\n')
+        next()
+    }
+
+    out <- rbind(out, dat)
+
+  }
+
+  return(out)
     
 }
