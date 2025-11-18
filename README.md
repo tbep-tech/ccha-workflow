@@ -4,3 +4,4 @@
 * Shiny application: [link](https://shiny.tbep.org/ccha-workflow)
 * Inundation estimates: [link](https://tbep-tech.github.io/ccha-workflow/inundation.html)
 * Phase 2 zone predictions: [link](https://tbep-tech.github.io/ccha-workflow/zone_predict.html)
+* Manuscript figures: [link](https://tbep-tech.github.io/ccha-workflow/manu_figs.html)
