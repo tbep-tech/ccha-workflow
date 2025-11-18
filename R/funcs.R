@@ -867,3 +867,50 @@ capwords <- function(s, strict = FALSE) {
                            sep = "", collapse = " " )
   sapply(strsplit(s, split = " "), cap, USE.NAMES = !is.null(names(s)))
 }
+
+# function to get daily temperature data from NOAA API
+# default to tampa international
+gettemp_fun <- function(sta = 'USW00012842', var = c('TMIN', 'TMAX', 'TAVG'), yr, noaa_key){
+
+  var <- match.arg(var)
+
+  base_url <- "https://www.ncei.noaa.gov/cdo-web/api/v2/data"
+
+  startdate <- paste0(yr, '-01-01')
+  enddate <- paste0(yr, '-12-31')
+
+  query_params <- list(
+    datasetid = 'GHCND',
+    stationid = sta,
+    datatypeid = var, 
+    startdate = startdate,
+    enddate = enddate,
+    limit = 1000,  # Increased from 400 to get more data per request
+    units = 'metric'
+  )
+
+  dat <- try({
+
+        response <- httr::GET(
+          url = base_url,
+          query = query_params,
+          httr::add_headers(token = noaa_key)
+        )
+        
+        # Check if request was successful
+        if(httr::status_code(response) != 200) {
+          stop("API request failed with status code: ", httr::status_code(response))
+        }
+        
+        # Parse the JSON response
+        content <- httr::content(response, as = "text", encoding = "UTF-8")
+        parsed_data <- jsonlite::fromJSON(content)
+        parsed_data
+      })
+    
+  if(inherits(dat, "try-error"))
+    return(NULL)
+
+  return(dat)
+    
+}

@@ -527,3 +527,14 @@ tranloc <- st_read(here('data/raw/All_CCHA_Transects.shp')) %>%
   select(site)
 
 save(tranloc, file = here('data/tranloc.RData'))
+
+# get tampa international daily min temperature --------------------------
+
+noaa_key <- Sys.getenv('NOAA_KEY')
+
+yrs <- 2023:2024
+
+all_temps <- lapply(yrs, function(y){
+  cat('Getting year:', y, '\n')
+  gettemp_fun(yr = y, noaa_key = noaa_key)
+})
