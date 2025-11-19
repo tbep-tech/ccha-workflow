@@ -296,28 +296,37 @@ div.csl-indent {
 <span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a>  <span class="at">elev =</span> <span class="fu">c</span>(<span class="fl">0.73</span>, <span class="fl">0.48</span>)</span>
 <span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(toplo, <span class="fu">aes</span>(<span class="at">x =</span> Meter, <span class="at">y =</span> Elevation_MTL, <span class="at">color =</span> Simplified_zone_name, <span class="at">group =</span> zone_group)) <span class="sc">+</span></span>
-<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data =</span> toplo2, <span class="fu">aes</span>(<span class="at">x =</span> Meter, <span class="at">y =</span> Elevation_MTL, <span class="at">group =</span> </span>
-<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>    zone_group, <span class="at">color =</span> Simplified_zone_name), <span class="at">alpha =</span> <span class="fl">0.2</span>) <span class="sc">+</span></span>
-<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">data =</span> lns, <span class="fu">aes</span>(<span class="at">yintercept =</span> elev, <span class="at">linetype =</span> Scenario), <span class="at">color =</span> <span class="st">'black'</span>) <span class="sc">+</span></span>
-<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span> </span>
-<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> Site) <span class="sc">+</span></span>
-<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a><span class="co">#   theme(</span></span>
-<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a><span class="co">#     legend.position = "bottom"</span></span>
-<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a><span class="co">#   ) +</span></span>
-<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Distance from water (m)"</span>, </span>
-<span id="cb3-96"><a href="#cb3-96" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Elevation (m above MTL)"</span>, </span>
-<span id="cb3-97"><a href="#cb3-97" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"Vegetation Zone"</span></span>
-<span id="cb3-98"><a href="#cb3-98" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb3-99"><a href="#cb3-99" aria-hidden="true" tabindex="-1"></a>p</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a>rects <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>  <span class="at">Site =</span> <span class="fu">unique</span>(toplo<span class="sc">$</span>Site),</span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>  <span class="at">ymin =</span> <span class="sc">-</span><span class="fl">0.11</span>,</span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>  <span class="at">ymax =</span> <span class="fl">0.114</span></span>
+<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(toplo, <span class="fu">aes</span>(<span class="at">x =</span> Meter, <span class="at">y =</span> Elevation_MTL, <span class="at">color =</span> Simplified_zone_name, <span class="at">group =</span> zone_group)) <span class="sc">+</span></span>
+<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_rect</span>(<span class="at">data =</span> rects, <span class="fu">aes</span>(<span class="at">ymin =</span> ymin, <span class="at">ymax =</span> ymax, <span class="at">fill =</span> <span class="st">'Existing SLR'</span>, <span class="at">xmin =</span> <span class="sc">-</span><span class="cn">Inf</span>, <span class="at">xmax =</span> <span class="cn">Inf</span>), <span class="at">alpha =</span> <span class="fl">0.4</span>, <span class="at">inherit.aes =</span> F) <span class="sc">+</span></span>
+<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data =</span> toplo2, <span class="fu">aes</span>(<span class="at">x =</span> Meter, <span class="at">y =</span> Elevation_MTL, <span class="at">group =</span> </span>
+<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a>    zone_group, <span class="at">color =</span> Simplified_zone_name), <span class="at">alpha =</span> <span class="fl">0.2</span>) <span class="sc">+</span></span>
+<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">data =</span> lns, <span class="fu">aes</span>(<span class="at">yintercept =</span> elev, <span class="at">linetype =</span> Scenario), <span class="at">color =</span> <span class="st">'black'</span>) <span class="sc">+</span></span>
+<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb3-96"><a href="#cb3-96" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="st">'grey'</span>) <span class="sc">+</span></span>
+<span id="cb3-97"><a href="#cb3-97" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> Site) <span class="sc">+</span></span>
+<span id="cb3-98"><a href="#cb3-98" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb3-99"><a href="#cb3-99" aria-hidden="true" tabindex="-1"></a><span class="co">#   theme(</span></span>
+<span id="cb3-100"><a href="#cb3-100" aria-hidden="true" tabindex="-1"></a><span class="co">#     legend.position = "bottom"</span></span>
+<span id="cb3-101"><a href="#cb3-101" aria-hidden="true" tabindex="-1"></a><span class="co">#   ) +</span></span>
+<span id="cb3-102"><a href="#cb3-102" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb3-103"><a href="#cb3-103" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Distance from water (m)"</span>, </span>
+<span id="cb3-104"><a href="#cb3-104" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Elevation (m above MTL)"</span>, </span>
+<span id="cb3-105"><a href="#cb3-105" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"Vegetation Zone"</span>, </span>
+<span id="cb3-106"><a href="#cb3-106" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="cn">NULL</span></span>
+<span id="cb3-107"><a href="#cb3-107" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb3-108"><a href="#cb3-108" aria-hidden="true" tabindex="-1"></a>p</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><a href="manu_figs_files/figure-html/slrzones-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2" title="Vegetation zones and elevations along transects by sites in Tampa Bay, Florida. Black lines indicate projected sea level rise by 2060 under high and intermediate scenarios [@sweet2022]."><img src="manu_figs_files/figure-html/slrzones-1.png" class="img-fluid figure-img" width="864" alt="Vegetation zones and elevations along transects by sites in Tampa Bay, Florida. Black lines indicate projected sea level rise by 2060 under high and intermediate scenarios (Sweet et al. 2022)."></a></p>
-<figcaption>Vegetation zones and elevations along transects by sites in Tampa Bay, Florida. Black lines indicate projected sea level rise by 2060 under high and intermediate scenarios <span class="citation" data-cites="sweet2022">(<a href="#ref-sweet2022" role="doc-biblioref">Sweet et al. 2022</a>)</span>.</figcaption>
+<p><a href="manu_figs_files/figure-html/slrzones-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2" title="Vegetation zones and elevations along transects by sites in Tampa Bay, Florida. Black lines indicate projected sea level rise by 2060 under high and intermediate scenarios [@sweet2022]. Shaded gray area indicates existing sea level rise from historical tidal gauge data."><img src="manu_figs_files/figure-html/slrzones-1.png" class="img-fluid figure-img" width="864" alt="Vegetation zones and elevations along transects by sites in Tampa Bay, Florida. Black lines indicate projected sea level rise by 2060 under high and intermediate scenarios (Sweet et al. 2022). Shaded gray area indicates existing sea level rise from historical tidal gauge data."></a></p>
+<figcaption>Vegetation zones and elevations along transects by sites in Tampa Bay, Florida. Black lines indicate projected sea level rise by 2060 under high and intermediate scenarios <span class="citation" data-cites="sweet2022">(<a href="#ref-sweet2022" role="doc-biblioref">Sweet et al. 2022</a>)</span>. Shaded gray area indicates existing sea level rise from historical tidal gauge data.</figcaption>
 </figure>
 </div>
 </div>

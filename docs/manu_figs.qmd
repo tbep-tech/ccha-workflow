@@ -98,7 +98,7 @@ p
 ```{r slrzones}
 #| fig-height: 6
 #| fig-width: 9
-#| fig-cap: "Vegetation zones and elevations along transects by sites in Tampa Bay, Florida. Black lines indicate projected sea level rise by 2060 under high and intermediate scenarios [@sweet2022]."
+#| fig-cap: "Vegetation zones and elevations along transects by sites in Tampa Bay, Florida. Black lines indicate projected sea level rise by 2060 under high and intermediate scenarios [@sweet2022].  Shaded gray area indicates existing sea level rise from historical tidal gauge data."
 
 # # accretion rates, based on RTK elevation diff per year  
 # accrt <- vegdatele %>%
@@ -183,11 +183,19 @@ lns <- tibble(
   elev = c(0.73, 0.48)
 )
 
+rects <- tibble(
+  Site = unique(toplo$Site),
+  ymin = -0.11,
+  ymax = 0.114
+)
+
 p <- ggplot(toplo, aes(x = Meter, y = Elevation_MTL, color = Simplified_zone_name, group = zone_group)) +
+  geom_rect(data = rects, aes(ymin = ymin, ymax = ymax, fill = 'Existing SLR', xmin = -Inf, xmax = Inf), alpha = 0.4, inherit.aes = F) +
   geom_line(data = toplo2, aes(x = Meter, y = Elevation_MTL, group = 
     zone_group, color = Simplified_zone_name), alpha = 0.2) +
   geom_hline(data = lns, aes(yintercept = elev, linetype = Scenario), color = 'black') +
   geom_line(size = 1) + 
+  scale_fill_manual(values = 'grey') +
   facet_wrap(~ Site) +
   theme_minimal() +
 #   theme(
@@ -196,7 +204,8 @@ p <- ggplot(toplo, aes(x = Meter, y = Elevation_MTL, color = Simplified_zone_nam
   labs(
     x = "Distance from water (m)", 
     y = "Elevation (m above MTL)", 
-    color = "Vegetation Zone"
+    color = "Vegetation Zone", 
+    fill = NULL
   )
 p
 ```
