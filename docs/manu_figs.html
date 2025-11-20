@@ -292,7 +292,7 @@ div.csl-indent {
 <span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unite</span>(zone_group, <span class="fu">c</span>(<span class="st">'Site'</span>, <span class="st">'zone_group'</span>), <span class="at">sep =</span> <span class="st">'_'</span>)</span>
 <span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a>lns <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
-<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>  <span class="at">Scenario =</span> <span class="fu">c</span>(<span class="st">'High SLR 2060'</span>, <span class="st">'Intermediate SLR 2060'</span>),</span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>  <span class="at">Scenario =</span> <span class="fu">c</span>(<span class="st">'High'</span>, <span class="st">'Intermediate'</span>),</span>
 <span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a>  <span class="at">elev =</span> <span class="fu">c</span>(<span class="fl">0.73</span>, <span class="fl">0.48</span>)</span>
 <span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a></span>
@@ -318,15 +318,16 @@ div.csl-indent {
 <span id="cb3-103"><a href="#cb3-103" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Distance from water (m)"</span>, </span>
 <span id="cb3-104"><a href="#cb3-104" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Elevation (m above MTL)"</span>, </span>
 <span id="cb3-105"><a href="#cb3-105" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"Vegetation Zone"</span>, </span>
-<span id="cb3-106"><a href="#cb3-106" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="cn">NULL</span></span>
-<span id="cb3-107"><a href="#cb3-107" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb3-108"><a href="#cb3-108" aria-hidden="true" tabindex="-1"></a>p</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb3-106"><a href="#cb3-106" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="cn">NULL</span>, </span>
+<span id="cb3-107"><a href="#cb3-107" aria-hidden="true" tabindex="-1"></a>    <span class="at">linetype =</span> <span class="st">'2060 SLR Scenario'</span></span>
+<span id="cb3-108"><a href="#cb3-108" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb3-109"><a href="#cb3-109" aria-hidden="true" tabindex="-1"></a>p</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><a href="manu_figs_files/figure-html/slrzones-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2" title="Vegetation zones and elevations along transects by sites in Tampa Bay, Florida. Black lines indicate projected sea level rise by 2060 under high and intermediate scenarios [@sweet2022]. Shaded gray area indicates existing sea level rise from historical tidal gauge data."><img src="manu_figs_files/figure-html/slrzones-1.png" class="img-fluid figure-img" width="864" alt="Vegetation zones and elevations along transects by sites in Tampa Bay, Florida. Black lines indicate projected sea level rise by 2060 under high and intermediate scenarios (Sweet et al. 2022). Shaded gray area indicates existing sea level rise from historical tidal gauge data."></a></p>
-<figcaption>Vegetation zones and elevations along transects by sites in Tampa Bay, Florida. Black lines indicate projected sea level rise by 2060 under high and intermediate scenarios <span class="citation" data-cites="sweet2022">(<a href="#ref-sweet2022" role="doc-biblioref">Sweet et al. 2022</a>)</span>. Shaded gray area indicates existing sea level rise from historical tidal gauge data.</figcaption>
+<p><a href="manu_figs_files/figure-html/slrzones-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2" title="Vegetation zones and elevations along site transects. Black lines indicate projected sea level rise by 2060 under high and intermediate scenarios [@sweet2022]. Shaded gray area indicates existing sea level rise from historical tidal gauge data."><img src="manu_figs_files/figure-html/slrzones-1.png" class="img-fluid figure-img" width="864" alt="Vegetation zones and elevations along site transects. Black lines indicate projected sea level rise by 2060 under high and intermediate scenarios (Sweet et al. 2022). Shaded gray area indicates existing sea level rise from historical tidal gauge data."></a></p>
+<figcaption>Vegetation zones and elevations along site transects. Black lines indicate projected sea level rise by 2060 under high and intermediate scenarios <span class="citation" data-cites="sweet2022">(<a href="#ref-sweet2022" role="doc-biblioref">Sweet et al. 2022</a>)</span>. Shaded gray area indicates existing sea level rise from historical tidal gauge data.</figcaption>
 </figure>
 </div>
 </div>
