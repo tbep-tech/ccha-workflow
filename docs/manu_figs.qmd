@@ -185,8 +185,8 @@ lns <- tibble(
 
 rects <- tibble(
   Site = unique(toplo$Site),
-  ymin = -0.11,
-  ymax = 0.114
+  ymin = -0.095,
+  ymax = 0.129
 )
 
 p <- ggplot(toplo, aes(x = Meter, y = Elevation_MTL, color = Simplified_zone_name, group = zone_group)) +
